@@ -1,0 +1,9 @@
+# Saved Miro page: inspiration only. Contains tracking scripts and account-specific config.
+/Claude Baude - Miro.html
+/Claude Baude - Miro_files/
+
+# Scratch folder for manual Save/Open dialog tests
+/.realtest/
+
+# Boards can hold sensitive content, so keep them out of the repo.
+*.mircore

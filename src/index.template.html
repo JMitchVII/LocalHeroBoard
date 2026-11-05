@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="__CSP__">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="x-dns-prefetch-control" content="off">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>MirCore</title>
+<style>__CSS__</style>
+</head>
+<body>
+<main id="stage">
+  <canvas id="board" tabindex="-1" aria-label="Whiteboard canvas"></canvas>
+
+  <div id="empty" class="empty">
+    <h1>Start thinking</h1>
+    <p><b>Double-click</b> anywhere for a sticky note.</p>
+    <p><b>Tab</b> while typing makes the next one. <b>Paste a list</b> to get one sticky per line.</p>
+  </div>
+
+  <header id="topleft" class="panel row">
+    <span class="mark" aria-hidden="true"></span>
+    <button id="menuBtn" class="btn" aria-label="File menu" title="File menu"></button>
+    <input id="title" aria-label="Board name" spellcheck="false" autocomplete="off" maxlength="120">
+    <button id="status" class="status" title="Save (Ctrl+S)"></button>
+  </header>
+
+  <div id="topright" class="panel row">
+    <button id="localBtn" class="local" title="What keeps this board on your machine"></button>
+    <span class="sep"></span>
+    <button id="findBtn" class="btn" aria-label="Find" title="Find (Ctrl+F)"></button>
+    <button id="framesBtn" class="btn" aria-label="Frames" title="Frames"></button>
+    <button id="helpBtn" class="btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)"></button>
+    <button id="presentBtn" class="primary">Present</button>
+  </div>
+
+  <nav id="tools" aria-label="Tools">
+    <div id="toolList" class="panel col" role="toolbar" aria-orientation="vertical" aria-label="Creation tools"></div>
+    <div class="panel col">
+      <button id="undoBtn" class="btn" aria-label="Undo" title="Undo (Ctrl+Z)"></button>
+      <button id="redoBtn" class="btn" aria-label="Redo" title="Redo (Ctrl+Y)"></button>
+    </div>
+  </nav>
+  <div id="flyout" class="panel" hidden></div>
+
+  <div id="ctx" class="panel row" role="toolbar" aria-label="Selection options" hidden></div>
+  <div id="hint" class="hint" hidden></div>
+
+  <aside id="framesPanel" class="panel side" hidden aria-label="Frames"></aside>
+
+  <div id="findBox" class="panel row" hidden>
+    <input id="findInput" placeholder="Find on board" aria-label="Find on board" spellcheck="false" autocomplete="off">
+    <span id="findCount"></span>
+    <button id="findClose" class="btn" aria-label="Close find"></button>
+  </div>
+
+  <div id="bottomright">
+    <canvas id="minimap" class="panel" width="220" height="140" hidden aria-hidden="true"></canvas>
+    <div class="panel row">
+      <button id="mapBtn" class="btn" aria-label="Toggle minimap" title="Minimap (M)"></button>
+      <span class="sep"></span>
+      <button id="zoomOut" class="btn" aria-label="Zoom out" title="Zoom out (Ctrl+-)"></button>
+      <button id="zoomLabel" class="zoomlabel" aria-label="Zoom level, click to fit board" title="Fit whole board (Ctrl+1)">100%</button>
+      <button id="zoomIn" class="btn" aria-label="Zoom in" title="Zoom in (Ctrl+=)"></button>
+    </div>
+  </div>
+
+  <div id="presentBar" class="panel row" hidden>
+    <button id="prevFrame" class="btn" aria-label="Previous frame"></button>
+    <span id="presentLabel"></span>
+    <button id="nextFrame" class="btn" aria-label="Next frame"></button>
+    <span class="sep"></span>
+    <button id="endPresent" class="plain">Exit</button>
+  </div>
+</main>
+
+<div id="pop" class="panel" hidden></div>
+<div id="toasts" role="status" aria-live="polite"></div>
+<dialog id="dialog"></dialog>
+<input id="fileInput" type="file" accept=".mircore,.json,image/png,image/jpeg,image/gif,image/webp" hidden>
+<input id="imageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
+<div id="print"></div>
+<script>__JS__</script>
+</body>
+</html>

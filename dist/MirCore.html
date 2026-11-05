@@ -1,0 +1,3510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-6Vu5hnZBBDno+mhHWQCw5EilWbvvvnsO+fDtGXt+uvo='; style-src 'sha256-pDPyJv51Al6bWawzl+sLvYi8XPMjdzXmbn2wcTR01iU='; img-src data: blob:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="x-dns-prefetch-control" content="off">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>MirCore</title>
+<style>:root {
+  --paper: #f6f4ee;
+  --dot: #d4cfc2;
+  --ink: #1f2933;
+  --ink-2: #5f6b7a;
+  --line: #e4e0d6;
+  --panel: #ffffff;
+  --accent: #0e7c66;
+  --accent-soft: #dcf1ec;
+  --danger: #b42318;
+  --shadow: 0 1px 2px rgba(31, 41, 51, .08), 0 6px 20px rgba(31, 41, 51, .10);
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--paper); color: var(--ink); font: 14px/1.4 var(--font); }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+#stage { position: fixed; inset: 0; overflow: hidden; user-select: none; -webkit-user-select: none; }
+#board { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; outline: none; display: block; }
+
+.panel { background: var(--panel); border-radius: 10px; box-shadow: var(--shadow); }
+.row { display: flex; align-items: center; gap: 2px; padding: 4px; }
+.col { display: flex; flex-direction: column; gap: 2px; padding: 4px; }
+.sep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; flex: none; }
+.btn { width: 36px; height: 36px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); flex: none; position: relative; }
+.btn:hover { background: #f0ede5; }
+.btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.btn:disabled { opacity: .32; cursor: default; background: none; }
+.btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.btn .key { position: absolute; right: 3px; bottom: 1px; font-size: 9px; line-height: 1; color: var(--ink-2); opacity: .75; }
+
+#topleft { position: absolute; top: 12px; left: 12px; max-width: calc(100vw - 420px); }
+.mark { width: 22px; height: 22px; margin: 0 6px 0 7px; border-radius: 6px; flex: none; background: var(--accent); box-shadow: inset -7px -7px 0 #f2c94c; }
+#title { border: 0; background: none; padding: 6px 7px; width: 210px; border-radius: 6px; font-weight: 600; text-overflow: ellipsis; user-select: text; -webkit-user-select: text; }
+#title:hover { background: #f0ede5; }
+#title:focus { background: #f0ede5; outline: 2px solid var(--accent); }
+.status { font-size: 12.5px; color: var(--ink-2); padding: 6px 10px; border-radius: 6px; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+.status:hover { background: #f0ede5; }
+.status.warn { color: #9a5b00; }
+.status.err { color: var(--danger); font-weight: 600; }
+
+#topright { position: absolute; top: 12px; right: 12px; }
+.local { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 7px; color: var(--accent); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+.local:hover { background: var(--accent-soft); }
+.local svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.primary { background: var(--accent); color: #fff; font-weight: 600; padding: 7px 14px; border-radius: 7px; margin-left: 4px; }
+.primary:hover { background: #0b6654; }
+.plain { padding: 7px 12px; border-radius: 7px; font-weight: 600; }
+.plain:hover { background: #f0ede5; }
+
+#tools { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
+#flyout { position: absolute; left: 72px; padding: 8px; display: grid; gap: 6px; }
+#flyout .title { font-size: 11.5px; color: var(--ink-2); font-weight: 600; grid-column: 1 / -1; }
+
+.swatch { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(31, 41, 51, .18); padding: 0; flex: none; position: relative; }
+.swatch:hover { transform: scale(1.08); }
+.swatch.round { border-radius: 50%; }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
+.swatch.none { background: linear-gradient(135deg, #fff 45%, var(--danger) 45%, var(--danger) 55%, #fff 55%) !important; }
+.grid6 { display: grid; grid-template-columns: repeat(6, 26px); gap: 8px; padding: 2px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 36px); gap: 2px; }
+
+#ctx { position: absolute; z-index: 5; left: 0; top: 0; }
+#ctx .btn { width: 32px; height: 32px; }
+#ctx .btn svg { width: 19px; height: 19px; }
+#ctx .txt { width: auto; min-width: 32px; padding: 0 7px; font-size: 13px; font-weight: 600; }
+
+#pop { position: fixed; z-index: 30; padding: 6px; max-height: 70vh; overflow: auto; }
+.menu { display: flex; flex-direction: column; min-width: 232px; }
+.menu button { display: flex; justify-content: space-between; gap: 24px; text-align: left; padding: 7px 10px; border-radius: 6px; white-space: nowrap; }
+.menu button:hover:not(:disabled) { background: #f0ede5; }
+.menu button:disabled { opacity: .4; cursor: default; }
+.menu button.danger { color: var(--danger); }
+.menu kbd { font: inherit; font-size: 12px; color: var(--ink-2); }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 2px; width: auto; }
+
+.hint { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); background: rgba(31, 41, 51, .92); color: #fff; border-radius: 7px; padding: 6px 12px; font-size: 12.5px; pointer-events: none; white-space: nowrap; }
+.hint b { font-weight: 600; color: #a7e3d4; }
+
+.empty { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); text-align: center; color: var(--ink-2); pointer-events: none; }
+.empty h1 { font-size: 30px; font-weight: 600; margin: 0 0 10px; color: var(--ink); letter-spacing: -.01em; }
+.empty p { margin: 4px 0; font-size: 15px; }
+.empty b { color: var(--ink); font-weight: 600; }
+
+.side { position: absolute; top: 68px; right: 12px; bottom: 76px; width: 260px; padding: 10px; display: flex; flex-direction: column; gap: 6px; overflow: auto; user-select: none; }
+.side h2 { font-size: 14px; margin: 2px 4px 4px; }
+.side .none { color: var(--ink-2); margin: 4px; font-size: 13px; }
+.frameRow { display: flex; align-items: center; gap: 2px; border-radius: 7px; }
+.frameRow:hover { background: #f0ede5; }
+.frameRow .name { flex: 1; min-width: 0; text-align: left; padding: 7px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frameRow .btn { width: 26px; height: 26px; }
+.frameRow .btn svg { width: 15px; height: 15px; }
+
+#findBox { position: absolute; top: 68px; left: 50%; transform: translateX(-50%); }
+#findInput { border: 0; outline: none; padding: 6px 8px; width: 220px; user-select: text; -webkit-user-select: text; }
+#findCount { font-size: 12.5px; color: var(--ink-2); min-width: 44px; text-align: right; padding-right: 4px; }
+
+#bottomright { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+#minimap { width: 220px; height: 140px; cursor: pointer; }
+.zoomlabel { width: 56px; height: 36px; border-radius: 7px; font-variant-numeric: tabular-nums; font-size: 13px; }
+.zoomlabel:hover { background: #f0ede5; }
+
+#presentBar { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); opacity: .35; transition: opacity .15s; }
+#presentBar:hover { opacity: 1; }
+#presentLabel { min-width: 170px; text-align: center; font-size: 13px; }
+body.presenting #topleft, body.presenting #topright, body.presenting #tools, body.presenting #flyout,
+body.presenting #bottomright, body.presenting #ctx, body.presenting #framesPanel, body.presenting #findBox,
+body.presenting #hint, body.presenting #empty { display: none !important; }
+
+.editor { position: absolute; z-index: 4; border: 0; outline: none; background: transparent; resize: none; overflow: hidden; padding: 0; margin: 0; font-family: var(--font); user-select: text; -webkit-user-select: text; white-space: pre-wrap; overflow-wrap: anywhere; }
+.editor.boxed { background: #fff; box-shadow: 0 0 0 2px var(--accent); border-radius: 3px; padding: 0 4px; }
+
+#toasts { position: fixed; z-index: 40; top: 66px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; }
+.toast { background: var(--ink); color: #fff; padding: 8px 14px; border-radius: 8px; box-shadow: var(--shadow); font-size: 13px; max-width: 520px; }
+.toast.err { background: var(--danger); }
+
+dialog { border: 0; border-radius: 12px; box-shadow: 0 12px 48px rgba(31, 41, 51, .3); padding: 22px 24px; max-width: 560px; color: var(--ink); max-height: 84vh; }
+dialog::backdrop { background: rgba(31, 41, 51, .35); }
+dialog h2 { margin: 0 0 8px; font-size: 18px; }
+dialog p { margin: 6px 0; }
+dialog ul { margin: 8px 0; padding-left: 20px; }
+dialog li { margin: 5px 0; }
+dialog code { font: 12px Consolas, "Cascadia Mono", monospace; background: #f3f1ea; padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+dialog .secondary { padding: 7px 14px; border-radius: 7px; font-weight: 600; background: #f0ede5; }
+dialog .secondary:hover { background: #e6e2d8; }
+dialog .destructive { padding: 7px 14px; border-radius: 7px; font-weight: 600; background: var(--danger); color: #fff; }
+.keys { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 28px; font-size: 13px; }
+.keys h3 { grid-column: 1 / -1; font-size: 12px; margin: 10px 0 2px; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; }
+.keys div { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.keys kbd { font: 12px var(--font); color: var(--ink-2); white-space: nowrap; }
+
+#print { display: none; }
+@media print {
+  @page { margin: 8mm; }
+  html, body { overflow: visible; height: auto; background: #fff; }
+  #stage, #pop, #toasts, dialog { display: none !important; }
+  #print { display: block; }
+  #print img { display: block; max-width: 100%; max-height: 96vh; margin: 0 auto; page-break-after: always; break-after: page; }
+  #print img:last-child { page-break-after: auto; break-after: auto; }
+}
+</style>
+</head>
+<body>
+<main id="stage">
+  <canvas id="board" tabindex="-1" aria-label="Whiteboard canvas"></canvas>
+
+  <div id="empty" class="empty">
+    <h1>Start thinking</h1>
+    <p><b>Double-click</b> anywhere for a sticky note.</p>
+    <p><b>Tab</b> while typing makes the next one. <b>Paste a list</b> to get one sticky per line.</p>
+  </div>
+
+  <header id="topleft" class="panel row">
+    <span class="mark" aria-hidden="true"></span>
+    <button id="menuBtn" class="btn" aria-label="File menu" title="File menu"></button>
+    <input id="title" aria-label="Board name" spellcheck="false" autocomplete="off" maxlength="120">
+    <button id="status" class="status" title="Save (Ctrl+S)"></button>
+  </header>
+
+  <div id="topright" class="panel row">
+    <button id="localBtn" class="local" title="What keeps this board on your machine"></button>
+    <span class="sep"></span>
+    <button id="findBtn" class="btn" aria-label="Find" title="Find (Ctrl+F)"></button>
+    <button id="framesBtn" class="btn" aria-label="Frames" title="Frames"></button>
+    <button id="helpBtn" class="btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)"></button>
+    <button id="presentBtn" class="primary">Present</button>
+  </div>
+
+  <nav id="tools" aria-label="Tools">
+    <div id="toolList" class="panel col" role="toolbar" aria-orientation="vertical" aria-label="Creation tools"></div>
+    <div class="panel col">
+      <button id="undoBtn" class="btn" aria-label="Undo" title="Undo (Ctrl+Z)"></button>
+      <button id="redoBtn" class="btn" aria-label="Redo" title="Redo (Ctrl+Y)"></button>
+    </div>
+  </nav>
+  <div id="flyout" class="panel" hidden></div>
+
+  <div id="ctx" class="panel row" role="toolbar" aria-label="Selection options" hidden></div>
+  <div id="hint" class="hint" hidden></div>
+
+  <aside id="framesPanel" class="panel side" hidden aria-label="Frames"></aside>
+
+  <div id="findBox" class="panel row" hidden>
+    <input id="findInput" placeholder="Find on board" aria-label="Find on board" spellcheck="false" autocomplete="off">
+    <span id="findCount"></span>
+    <button id="findClose" class="btn" aria-label="Close find"></button>
+  </div>
+
+  <div id="bottomright">
+    <canvas id="minimap" class="panel" width="220" height="140" hidden aria-hidden="true"></canvas>
+    <div class="panel row">
+      <button id="mapBtn" class="btn" aria-label="Toggle minimap" title="Minimap (M)"></button>
+      <span class="sep"></span>
+      <button id="zoomOut" class="btn" aria-label="Zoom out" title="Zoom out (Ctrl+-)"></button>
+      <button id="zoomLabel" class="zoomlabel" aria-label="Zoom level, click to fit board" title="Fit whole board (Ctrl+1)">100%</button>
+      <button id="zoomIn" class="btn" aria-label="Zoom in" title="Zoom in (Ctrl+=)"></button>
+    </div>
+  </div>
+
+  <div id="presentBar" class="panel row" hidden>
+    <button id="prevFrame" class="btn" aria-label="Previous frame"></button>
+    <span id="presentLabel"></span>
+    <button id="nextFrame" class="btn" aria-label="Next frame"></button>
+    <span class="sep"></span>
+    <button id="endPresent" class="plain">Exit</button>
+  </div>
+</main>
+
+<div id="pop" class="panel" hidden></div>
+<div id="toasts" role="status" aria-live="polite"></div>
+<dialog id="dialog"></dialog>
+<input id="fileInput" type="file" accept=".mircore,.json,image/png,image/jpeg,image/gif,image/webp" hidden>
+<input id="imageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
+<div id="print"></div>
+<script>(() => {
+'use strict';
+// Constants, helpers and the document model.
+//
+// Items are immutable: every change replaces the object in `doc.items`. That
+// makes undo a cheap reference snapshot and lets text layout be cached per
+// item in a WeakMap.
+
+const FORMAT = 'mircore-board';
+const FORMAT_VERSION = 1;
+const FILE_EXT = '.mircore';
+const FONT_STACK = '"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif';
+const ACCENT = '#0e7c66';
+const INK = '#1f2933';
+
+const STICKY_COLORS = ['#fdf0a6', '#ffd9a8', '#ffc2b3', '#f9c6dc', '#dcc9f7', '#bfdcfa', '#b9ebe0', '#cdeab0', '#e9e3d3', '#ffffff', '#c9ced6', '#3b4252'];
+const INK_COLORS = ['#1f2933', '#5f6b7a', '#b42318', '#c2570c', '#a16207', '#15803d', '#0e7c66', '#1d5fd1', '#6d3fd1', '#be2d86', '#c9ced6', '#ffffff'];
+const FILL_COLORS = ['transparent', '#ffffff', '#fdf0a6', '#ffd9a8', '#ffc2b3', '#f9c6dc', '#dcc9f7', '#bfdcfa', '#b9ebe0', '#cdeab0', '#e9e3d3', '#1f2933'];
+const SHAPE_NAMES = ['rect', 'round', 'ellipse', 'diamond', 'triangle', 'parallelogram', 'hexagon', 'star'];
+const ITEM_TYPES = ['sticky', 'text', 'shape', 'line', 'pen', 'frame', 'image'];
+const CONNECTABLE = new Set(['sticky', 'text', 'shape', 'image']);
+const TEXTUAL = new Set(['sticky', 'text', 'shape']);
+const MIN_SIZE = 16;
+const MIN_ZOOM = 0.05;
+const MAX_ZOOM = 4;
+
+const $ = (selector, root = document) => root.querySelector(selector);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+function h(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') node.className = v;
+    else if (k === 'on') for (const [ev, fn] of Object.entries(v)) node.addEventListener(ev, fn);
+    else if (k === 'role' || k.startsWith('aria-') || k.startsWith('data-')) node.setAttribute(k, v);
+    else node[k] = v;
+  }
+  node.append(...children.filter(c => c !== null && c !== undefined));
+  return node;
+}
+
+function uid() {
+  const bytes = crypto.getRandomValues(new Uint8Array(9));
+  return Array.from(bytes, b => (b % 36).toString(36)).join('');
+}
+
+function isDarkColor(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return false;
+  const n = parseInt(hex.slice(1), 16);
+  return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 128;
+}
+const textOn = fill => (isDarkColor(fill) ? '#ffffff' : INK);
+
+// ---- Document -------------------------------------------------------------
+
+const doc = {
+  title: 'Untitled board',
+  items: new Map(),
+  order: [],
+  assets: new Map(), // id -> data URL. Only assets still referenced get saved.
+};
+
+const view = { x: 0, y: 0, z: 1 };
+const sel = new Set();
+
+const memory = {
+  stickyColor: STICKY_COLORS[0],
+  shape: 'rect',
+  lineKind: 'curve',
+  penColor: INK_COLORS[0],
+  penWidth: 3,
+  penAlpha: 1,
+};
+
+const DEFAULTS = {
+  sticky: () => ({ x: 0, y: 0, w: 200, h: 200, color: memory.stickyColor, text: '', fontSize: 0, bold: false, align: 'center' }),
+  text: () => ({ x: 0, y: 0, w: 320, h: 40, text: '', fontSize: 24, color: INK, bold: false, align: 'left' }),
+  shape: () => ({ x: 0, y: 0, w: 180, h: 120, shape: memory.shape, fill: '#ffffff', stroke: INK, strokeWidth: 2, dash: false, text: '', fontSize: 18, color: INK, bold: false, align: 'center' }),
+  line: () => ({ a: { x: 0, y: 0 }, b: { x: 100, y: 0 }, kind: memory.lineKind, color: INK, width: 2, dash: false, startCap: 'none', endCap: 'arrow', text: '' }),
+  pen: () => ({ x: 0, y: 0, w: 1, h: 1, ow: 1, oh: 1, pts: [], color: memory.penColor, width: memory.penWidth, alpha: memory.penAlpha }),
+  frame: () => ({ x: 0, y: 0, w: 960, h: 540, title: 'Frame', fill: '#ffffff', seq: 0 }),
+  image: () => ({ x: 0, y: 0, w: 100, h: 100, asset: '' }),
+};
+
+function makeItem(type, props = {}) {
+  return { id: uid(), type, locked: false, group: null, ...DEFAULTS[type](), ...props };
+}
+
+function addItem(item) {
+  doc.items.set(item.id, item);
+  doc.order.push(item.id);
+  syncEmptyState();
+  return item;
+}
+
+function patch(id, changes) {
+  const item = doc.items.get(id);
+  if (!item) return null;
+  const next = { ...item, ...changes };
+  doc.items.set(id, next);
+  return next;
+}
+
+function framesInOrder() {
+  return doc.order.map(id => doc.items.get(id)).filter(i => i.type === 'frame').sort((a, b) => a.seq - b.seq);
+}
+
+// Frames always sit behind everything else, so the paint order is two passes.
+function paintOrder() {
+  const frames = [];
+  const rest = [];
+  for (const id of doc.order) {
+    const item = doc.items.get(id);
+    (item.type === 'frame' ? frames : rest).push(item);
+  }
+  return frames.concat(rest);
+}
+
+// ---- History --------------------------------------------------------------
+
+const HISTORY_LIMIT = 200;
+const history = { past: [], future: [], base: null };
+
+const snapshot = () => ({ items: new Map(doc.items), order: doc.order.slice() });
+
+function sameAsBase() {
+  const b = history.base;
+  if (doc.order.length !== b.order.length || doc.items.size !== b.items.size) return false;
+  for (let i = 0; i < doc.order.length; i++) if (doc.order[i] !== b.order[i]) return false;
+  for (const [id, item] of doc.items) if (b.items.get(id) !== item) return false;
+  return true;
+}
+
+function resetHistory() {
+  history.past = [];
+  history.future = [];
+  history.base = snapshot();
+  syncHistoryButtons();
+}
+
+// Call once per user-visible action. No-ops when nothing actually changed.
+function commit() {
+  if (sameAsBase()) { invalidate(); return false; }
+  history.past.push(history.base);
+  if (history.past.length > HISTORY_LIMIT) history.past.shift();
+  history.future = [];
+  history.base = snapshot();
+  afterChange();
+  return true;
+}
+
+function restore(snap) {
+  doc.items = new Map(snap.items);
+  doc.order = snap.order.slice();
+  for (const id of [...sel]) if (!doc.items.has(id)) sel.delete(id);
+  afterChange();
+  selectionChanged();
+}
+
+function undo() {
+  if (!history.past.length) return;
+  history.future.push(history.base);
+  history.base = history.past.pop();
+  restore(history.base);
+}
+
+function redo() {
+  if (!history.future.length) return;
+  history.past.push(history.base);
+  history.base = history.future.pop();
+  restore(history.base);
+}
+
+function afterChange() {
+  markDirty();
+  syncHistoryButtons();
+  syncEmptyState();
+  refreshFramesPanel();
+  invalidate();
+}
+
+// Text layout, bounds, connector routing and hit testing.
+
+// ---- Text -----------------------------------------------------------------
+
+const LINE_HEIGHT = 1.3;
+const measureCtx = document.createElement('canvas').getContext('2d');
+const fontOf = (size, bold) => `${bold ? 600 : 400} ${size}px ${FONT_STACK}`;
+
+// Widths are measured once at 100px and scaled, so fitting a sticky's text
+// never has to re-measure at each candidate size.
+const widthCache = new Map();
+function unitWidth(text, bold) {
+  const key = (bold ? 'b' : 'n') + text;
+  let w = widthCache.get(key);
+  if (w === undefined) {
+    if (widthCache.size > 50000) widthCache.clear();
+    measureCtx.font = fontOf(100, bold);
+    w = measureCtx.measureText(text).width / 100;
+    widthCache.set(key, w);
+  }
+  return w;
+}
+
+const baselineCache = {};
+function baselineRatio(bold) {
+  const key = bold ? 'b' : 'n';
+  if (!baselineCache[key]) {
+    measureCtx.font = fontOf(100, bold);
+    const m = measureCtx.measureText('Hg');
+    const asc = (m.fontBoundingBoxAscent ?? 92) / 100;
+    const desc = (m.fontBoundingBoxDescent ?? 24) / 100;
+    baselineCache[key] = (LINE_HEIGHT - (asc + desc)) / 2 + asc;
+  }
+  return baselineCache[key];
+}
+
+function wrapText(text, size, bold, maxWidth) {
+  const lines = [];
+  for (const para of text.split('\n')) {
+    let line = '';
+    let lineW = 0;
+    for (const token of para.split(/(\s+)/)) {
+      if (!token) continue;
+      const w = unitWidth(token, bold) * size;
+      if (lineW + w <= maxWidth) { line += token; lineW += w; continue; }
+      if (/^\s+$/.test(token)) { lines.push(line); line = ''; lineW = 0; continue; }
+      if (line) { lines.push(line.trimEnd()); line = ''; lineW = 0; }
+      if (w <= maxWidth) { line = token; lineW = w; continue; }
+      for (const ch of token) { // a single word wider than the box: break it
+        const cw = unitWidth(ch, bold) * size;
+        if (lineW + cw > maxWidth && line) { lines.push(line); line = ''; lineW = 0; }
+        line += ch;
+        lineW += cw;
+      }
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+function fitText(text, boxW, boxH, maxSize, bold) {
+  const fits = s => wrapText(text, s, bold, boxW).length * s * LINE_HEIGHT <= boxH;
+  if (fits(maxSize)) return maxSize;
+  let lo = Math.min(4, maxSize);
+  let hi = maxSize;
+  for (let i = 0; i < 9; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid; else hi = mid;
+  }
+  return lo;
+}
+
+const SHAPE_INSETS = {
+  rect: [0.06, 0.06, 0.06, 0.06], round: [0.08, 0.08, 0.08, 0.08], ellipse: [0.16, 0.16, 0.16, 0.16],
+  diamond: [0.25, 0.25, 0.25, 0.25], triangle: [0.26, 0.42, 0.26, 0.06], parallelogram: [0.2, 0.08, 0.2, 0.08],
+  hexagon: [0.2, 0.1, 0.2, 0.1], star: [0.32, 0.36, 0.32, 0.22],
+};
+
+function textBox(item) {
+  if (item.type === 'sticky') {
+    const pad = item.w * 0.08;
+    return { x: item.x + pad, y: item.y + pad, w: item.w - pad * 2, h: item.h - pad * 2 };
+  }
+  if (item.type === 'shape') {
+    const [l, t, r, b] = SHAPE_INSETS[item.shape] || SHAPE_INSETS.rect;
+    return { x: item.x + item.w * l, y: item.y + item.h * t, w: item.w * (1 - l - r), h: item.h * (1 - t - b) };
+  }
+  return { x: item.x, y: item.y, w: item.w, h: item.h };
+}
+
+const layoutCache = new WeakMap();
+function layoutOf(item) {
+  let layout = layoutCache.get(item);
+  if (layout) return layout;
+  const box = textBox(item);
+  const text = item.text || '';
+  let size;
+  if (item.type === 'text') size = item.fontSize;
+  else {
+    const maxSize = item.fontSize || item.w * 0.16;
+    size = text ? fitText(text, box.w, box.h, maxSize, item.bold) : maxSize;
+  }
+  const lines = wrapText(text, size, item.bold, box.w);
+  const lineH = size * LINE_HEIGHT;
+  const totalH = lines.length * lineH;
+  layout = { box, size, lines, lineH, totalH, top: item.type === 'text' ? box.y : box.y + (box.h - totalH) / 2 };
+  layoutCache.set(item, layout);
+  return layout;
+}
+
+function withTextHeight(item) {
+  return item.type === 'text' ? { ...item, h: Math.max(layoutOf({ ...item }).totalH, item.fontSize * LINE_HEIGHT) } : item;
+}
+
+// ---- Bounds ---------------------------------------------------------------
+
+const center = r => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+const rectsTouch = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+const rectHas = (r, p) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+const rectInside = (inner, outer) => inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.w <= outer.x + outer.w && inner.y + inner.h <= outer.y + outer.h;
+
+function bounds(item) {
+  if (item.type !== 'line') return { x: item.x, y: item.y, w: item.w, h: item.h };
+  const pts = linePath(item);
+  let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+  for (const p of pts) {
+    l = Math.min(l, p.x); t = Math.min(t, p.y);
+    r = Math.max(r, p.x); b = Math.max(b, p.y);
+  }
+  return { x: l, y: t, w: r - l, h: b - t };
+}
+
+function unionBounds(items) {
+  let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+  for (const item of items) {
+    const box = bounds(item);
+    l = Math.min(l, box.x); t = Math.min(t, box.y);
+    r = Math.max(r, box.x + box.w); b = Math.max(b, box.y + box.h);
+  }
+  return l === Infinity ? null : { x: l, y: t, w: r - l, h: b - t };
+}
+
+const selectedItems = () => [...sel].map(id => doc.items.get(id)).filter(Boolean);
+
+// ---- Shapes ---------------------------------------------------------------
+
+const POLYGONS = {
+  diamond: [[0.5, 0], [1, 0.5], [0.5, 1], [0, 0.5]],
+  triangle: [[0.5, 0], [1, 1], [0, 1]],
+  parallelogram: [[0.2, 0], [1, 0], [0.8, 1], [0, 1]],
+  hexagon: [[0.22, 0], [0.78, 0], [1, 0.5], [0.78, 1], [0.22, 1], [0, 0.5]],
+  star: (() => {
+    const pts = [];
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 0.2 : 0.5;
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      pts.push([0.5 + Math.cos(a) * r, 0.53 + Math.sin(a) * r]);
+    }
+    return pts;
+  })(),
+};
+
+function pointInPolygon(poly, x, y) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function pointInShape(item, p) {
+  const u = (p.x - item.x) / item.w;
+  const v = (p.y - item.y) / item.h;
+  if (item.shape === 'ellipse') return (u - 0.5) ** 2 + (v - 0.5) ** 2 <= 0.25;
+  const poly = POLYGONS[item.shape];
+  return poly ? pointInPolygon(poly, u, v) : u >= 0 && u <= 1 && v >= 0 && v <= 1;
+}
+
+// ---- Connectors -----------------------------------------------------------
+
+const SIDES = {
+  t: { dx: 0, dy: -1, opposite: 'b' },
+  r: { dx: 1, dy: 0, opposite: 'l' },
+  b: { dx: 0, dy: 1, opposite: 't' },
+  l: { dx: -1, dy: 0, opposite: 'r' },
+};
+
+// Where a ray from the box centre towards `side` meets the item's outline, so
+// connectors land on a triangle's slope rather than its bounding box.
+function anchorPoint(item, side) {
+  const { dx, dy } = SIDES[side];
+  const c = center(item);
+  const edge = { x: c.x + dx * item.w / 2, y: c.y + dy * item.h / 2 };
+  const poly = item.type === 'shape' ? POLYGONS[item.shape] : null;
+  if (!poly) return edge;
+  let best = null;
+  for (let i = 0; i < poly.length; i++) {
+    const [ax, ay] = poly[i];
+    const [bx, by] = poly[(i + 1) % poly.length];
+    const px = item.x + ax * item.w, py = item.y + ay * item.h;
+    const ex = item.x + bx * item.w - px, ey = item.y + by * item.h - py;
+    const den = dx * ey - dy * ex;
+    if (Math.abs(den) < 1e-9) continue;
+    const t = ((px - c.x) * ey - (py - c.y) * ex) / den;
+    const u = ((px - c.x) * dy - (py - c.y) * dx) / den;
+    if (t >= 0 && u >= 0 && u <= 1 && (best === null || t > best)) best = t;
+  }
+  return best === null ? edge : { x: c.x + dx * best, y: c.y + dy * best };
+}
+
+function facingSide(box, target) {
+  const c = center(box);
+  const dx = (target.x - c.x) / Math.max(box.w, 1);
+  const dy = (target.y - c.y) / Math.max(box.h, 1);
+  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'r' : 'l';
+  return dy > 0 ? 'b' : 't';
+}
+
+function lineEnds(line) {
+  const ia = line.a.id ? doc.items.get(line.a.id) : null;
+  const ib = line.b.id ? doc.items.get(line.b.id) : null;
+  const ca = ia ? center(ia) : line.a;
+  const cb = ib ? center(ib) : line.b;
+  const resolve = (end, item, towards) => {
+    if (!item) return { x: end.x, y: end.y, dir: null };
+    const side = end.side && end.side !== 'auto' ? end.side : facingSide(item, towards);
+    return { ...anchorPoint(item, side), dir: SIDES[side] };
+  };
+  return { a: resolve(line.a, ia, cb), b: resolve(line.b, ib, ca) };
+}
+
+function freeDir(from, to) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? SIDES.r : SIDES.l;
+  return dy >= 0 ? SIDES.b : SIDES.t;
+}
+
+function linePath(line) {
+  const { a, b } = lineEnds(line);
+  if (line.kind === 'straight') return [a, b];
+  const da = a.dir || freeDir(a, b);
+  const db = b.dir || freeDir(b, a);
+  if (line.kind === 'elbow') return elbowPath(a, b, da, db);
+  const reach = Math.max(36, Math.hypot(b.x - a.x, b.y - a.y) * 0.42);
+  const c1 = { x: a.x + da.dx * reach, y: a.y + da.dy * reach };
+  const c2 = { x: b.x + db.dx * reach, y: b.y + db.dy * reach };
+  const pts = [];
+  for (let i = 0; i <= 28; i++) {
+    const t = i / 28, u = 1 - t;
+    pts.push({
+      x: u * u * u * a.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * b.x,
+      y: u * u * u * a.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * b.y,
+    });
+  }
+  return pts;
+}
+
+function elbowPath(a, b, da, db) {
+  const stub = 24;
+  const s = { x: a.x + da.dx * stub, y: a.y + da.dy * stub };
+  const e = { x: b.x + db.dx * stub, y: b.y + db.dy * stub };
+  const horizontalA = da.dx !== 0;
+  const horizontalB = db.dx !== 0;
+  let mid;
+  if (horizontalA && horizontalB) {
+    const mx = (s.x + e.x) / 2;
+    mid = [{ x: mx, y: s.y }, { x: mx, y: e.y }];
+  } else if (!horizontalA && !horizontalB) {
+    const my = (s.y + e.y) / 2;
+    mid = [{ x: s.x, y: my }, { x: e.x, y: my }];
+  } else {
+    mid = [horizontalA ? { x: e.x, y: s.y } : { x: s.x, y: e.y }];
+  }
+  const pts = [a, s, ...mid, e, b];
+  return pts.filter((p, i) => i === 0 || Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y) > 0.01);
+}
+
+function pathMidpoint(pts) {
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+  let left = total / 2;
+  for (let i = 1; i < pts.length; i++) {
+    const seg = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    if (seg >= left && seg > 0) {
+      const t = left / seg;
+      return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t };
+    }
+    left -= seg;
+  }
+  return pts[0];
+}
+
+// ---- Hit testing ----------------------------------------------------------
+
+function distToSegment(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len = dx * dx + dy * dy;
+  const t = len ? clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len, 0, 1) : 0;
+  return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+}
+
+function penHit(item, p, tol) {
+  const sx = item.w / item.ow, sy = item.h / item.oh;
+  const reach = tol + item.width / 2;
+  if (!rectHas({ x: item.x - reach, y: item.y - reach, w: item.w + reach * 2, h: item.h + reach * 2 }, p)) return false;
+  const pts = item.pts;
+  if (pts.length === 2) return Math.hypot(item.x + pts[0] * sx - p.x, item.y + pts[1] * sy - p.y) <= reach;
+  for (let i = 2; i < pts.length; i += 2) {
+    const a = { x: item.x + pts[i - 2] * sx, y: item.y + pts[i - 1] * sy };
+    const b = { x: item.x + pts[i] * sx, y: item.y + pts[i + 1] * sy };
+    if (distToSegment(p, a, b) <= reach) return true;
+  }
+  return false;
+}
+
+function frameLabelRect(frame) {
+  const size = 13 / view.z;
+  measureCtx.font = fontOf(13, true);
+  const width = Math.min(measureCtx.measureText(frame.title || ' ').width + 12, frame.w * view.z);
+  return { x: frame.x, y: frame.y - size * 1.7, w: Math.max(width, 40) / view.z, h: size * 1.6 };
+}
+
+function itemHit(item, p, tol) {
+  switch (item.type) {
+    case 'line': {
+      const pts = linePath(item);
+      for (let i = 1; i < pts.length; i++) if (distToSegment(p, pts[i - 1], pts[i]) <= tol + item.width / 2) return true;
+      return false;
+    }
+    case 'pen': return penHit(item, p, tol);
+    case 'shape': return pointInShape(item, p);
+    case 'frame': {
+      if (rectHas(frameLabelRect(item), p)) return true;
+      const outer = { x: item.x - tol, y: item.y - tol, w: item.w + tol * 2, h: item.h + tol * 2 };
+      const inner = { x: item.x + tol, y: item.y + tol, w: item.w - tol * 2, h: item.h - tol * 2 };
+      return rectHas(outer, p) && !rectHas(inner, p);
+    }
+    default: return rectHas(item, p);
+  }
+}
+
+function hitTest(p) {
+  const tol = 5 / view.z;
+  const items = paintOrder();
+  for (let i = items.length - 1; i >= 0; i--) if (itemHit(items[i], p, tol)) return items[i];
+  return null;
+}
+
+// A connector end dropped here attaches to this item: on a specific side when
+// close to one of its anchors, otherwise on whichever side faces the far end.
+function connectTarget(p, excludeId) {
+  const margin = 12 / view.z;
+  const items = paintOrder();
+  for (let i = items.length - 1; i >= 0; i--) {
+    const item = items[i];
+    if (!CONNECTABLE.has(item.type) || item.id === excludeId) continue;
+    const zone = { x: item.x - margin, y: item.y - margin, w: item.w + margin * 2, h: item.h + margin * 2 };
+    if (!rectHas(zone, p)) continue;
+    for (const side of Object.keys(SIDES)) {
+      const a = anchorPoint(item, side);
+      if (Math.hypot(a.x - p.x, a.y - p.y) <= 16 / view.z) return { id: item.id, side };
+    }
+    return { id: item.id, side: 'auto' };
+  }
+  return null;
+}
+
+// Canvas drawing. drawItem() is shared by the screen and the PNG/print export.
+
+const canvas = $('#board');
+const ctx = canvas.getContext('2d', { alpha: false });
+const stage = $('#stage');
+
+let needsFrame = false;
+function invalidate() {
+  if (needsFrame) return;
+  needsFrame = true;
+  requestAnimationFrame(render);
+}
+
+const toScreen = p => ({ x: (p.x - view.x) * view.z, y: (p.y - view.y) * view.z });
+const toWorld = p => ({ x: p.x / view.z + view.x, y: p.y / view.z + view.y });
+const screenRect = r => ({ ...toScreen(r), w: r.w * view.z, h: r.h * view.z });
+
+function worldViewport() {
+  return { x: view.x, y: view.y, w: stage.clientWidth / view.z, h: stage.clientHeight / view.z };
+}
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(stage.clientWidth * dpr);
+  canvas.height = Math.round(stage.clientHeight * dpr);
+  invalidate();
+}
+
+// ---- Images ---------------------------------------------------------------
+
+const imageCache = new Map();
+function imageFor(assetId) {
+  let img = imageCache.get(assetId);
+  if (!img && doc.assets.has(assetId)) {
+    img = new Image();
+    img.onload = invalidate;
+    img.src = doc.assets.get(assetId);
+    imageCache.set(assetId, img);
+  }
+  return img;
+}
+
+// ---- Items ----------------------------------------------------------------
+
+function tracePolygon(c, item, poly) {
+  poly.forEach(([u, v], i) => {
+    const x = item.x + u * item.w, y = item.y + v * item.h;
+    if (i) c.lineTo(x, y); else c.moveTo(x, y);
+  });
+  c.closePath();
+}
+
+function traceShape(c, item) {
+  c.beginPath();
+  const poly = POLYGONS[item.shape];
+  if (poly) tracePolygon(c, item, poly);
+  else if (item.shape === 'ellipse') c.ellipse(item.x + item.w / 2, item.y + item.h / 2, item.w / 2, item.h / 2, 0, 0, Math.PI * 2);
+  else if (item.shape === 'round') c.roundRect(item.x, item.y, item.w, item.h, Math.min(item.w, item.h) * 0.16);
+  else c.rect(item.x, item.y, item.w, item.h);
+}
+
+function drawLayout(c, item, color, zoom) {
+  const L = layoutOf(item);
+  if (!L.lines.length || L.size * zoom < 2.2) return;
+  c.save();
+  if (item.type !== 'text') {
+    c.beginPath();
+    c.rect(item.x, item.y, item.w, item.h);
+    c.clip();
+  }
+  c.font = fontOf(L.size, item.bold);
+  c.fillStyle = color;
+  c.textBaseline = 'alphabetic';
+  c.textAlign = item.align === 'left' ? 'left' : item.align === 'right' ? 'right' : 'center';
+  const x = item.align === 'left' ? L.box.x : item.align === 'right' ? L.box.x + L.box.w : L.box.x + L.box.w / 2;
+  const offset = baselineRatio(item.bold) * L.size;
+  L.lines.forEach((line, i) => c.fillText(line, x, L.top + i * L.lineH + offset));
+  c.restore();
+}
+
+function drawSticky(c, item, opts) {
+  if (opts.shadows) {
+    c.save();
+    c.shadowColor = 'rgba(31,41,51,.22)';
+    c.shadowBlur = 9 * opts.zoom;
+    c.shadowOffsetY = 3 * opts.zoom;
+    c.fillStyle = item.color;
+    c.fillRect(item.x, item.y, item.w, item.h);
+    c.restore();
+  } else {
+    c.fillStyle = item.color;
+    c.fillRect(item.x, item.y, item.w, item.h);
+  }
+  if (item.color === '#ffffff') {
+    c.strokeStyle = 'rgba(31,41,51,.14)';
+    c.lineWidth = 1 / opts.zoom;
+    c.strokeRect(item.x, item.y, item.w, item.h);
+  }
+  if (opts.skipTextOf !== item.id) drawLayout(c, item, textOn(item.color), opts.zoom);
+}
+
+function drawShape(c, item, opts) {
+  traceShape(c, item);
+  if (item.fill !== 'transparent') { c.fillStyle = item.fill; c.fill(); }
+  if (item.strokeWidth > 0) {
+    c.strokeStyle = item.stroke;
+    c.lineWidth = item.strokeWidth;
+    c.lineJoin = 'round';
+    c.setLineDash(item.dash ? [item.strokeWidth * 4, item.strokeWidth * 3] : []);
+    c.stroke();
+    c.setLineDash([]);
+  }
+  if (opts.skipTextOf !== item.id) drawLayout(c, item, item.color, opts.zoom);
+}
+
+function arrowHead(c, tip, from, size, color) {
+  const angle = Math.atan2(tip.y - from.y, tip.x - from.x);
+  c.fillStyle = color;
+  c.beginPath();
+  c.moveTo(tip.x, tip.y);
+  c.lineTo(tip.x - Math.cos(angle - 0.42) * size, tip.y - Math.sin(angle - 0.42) * size);
+  c.lineTo(tip.x - Math.cos(angle + 0.42) * size, tip.y - Math.sin(angle + 0.42) * size);
+  c.closePath();
+  c.fill();
+}
+
+function drawLine(c, item, opts) {
+  const pts = linePath(item);
+  c.strokeStyle = item.color;
+  c.lineWidth = item.width;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  c.setLineDash(item.dash ? [item.width * 4, item.width * 3] : []);
+  c.beginPath();
+  c.moveTo(pts[0].x, pts[0].y);
+  if (item.kind === 'elbow') {
+    for (let i = 1; i < pts.length - 1; i++) c.arcTo(pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y, 10);
+    c.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  } else {
+    for (let i = 1; i < pts.length; i++) c.lineTo(pts[i].x, pts[i].y);
+  }
+  c.stroke();
+  c.setLineDash([]);
+  const head = 8 + item.width * 2.6;
+  const n = pts.length;
+  if (item.endCap === 'arrow') arrowHead(c, pts[n - 1], pts[Math.max(0, n - 2)], head, item.color);
+  if (item.startCap === 'arrow') arrowHead(c, pts[0], pts[1], head, item.color);
+  if (item.text && opts.skipTextOf !== item.id) {
+    const mid = pathMidpoint(pts);
+    c.font = fontOf(15, false);
+    const w = c.measureText(item.text).width + 12;
+    c.fillStyle = opts.background;
+    c.fillRect(mid.x - w / 2, mid.y - 12, w, 24);
+    c.fillStyle = item.color;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(item.text, mid.x, mid.y);
+  }
+}
+
+function drawPen(c, item) {
+  const sx = item.w / item.ow, sy = item.h / item.oh;
+  const pts = item.pts;
+  c.save();
+  c.globalAlpha = item.alpha;
+  c.strokeStyle = item.color;
+  c.fillStyle = item.color;
+  c.lineWidth = item.width;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  const X = i => item.x + pts[i] * sx;
+  const Y = i => item.y + pts[i + 1] * sy;
+  if (pts.length <= 2) {
+    c.beginPath();
+    c.arc(X(0), Y(0), item.width / 2, 0, Math.PI * 2);
+    c.fill();
+  } else {
+    c.beginPath();
+    c.moveTo(X(0), Y(0));
+    for (let i = 2; i < pts.length - 2; i += 2) {
+      c.quadraticCurveTo(X(i), Y(i), (X(i) + X(i + 2)) / 2, (Y(i) + Y(i + 2)) / 2);
+    }
+    c.lineTo(X(pts.length - 2), Y(pts.length - 2));
+    c.stroke();
+  }
+  c.restore();
+}
+
+function drawFrame(c, item, opts) {
+  if (item.fill !== 'transparent') {
+    c.fillStyle = item.fill;
+    c.fillRect(item.x, item.y, item.w, item.h);
+  }
+  c.strokeStyle = 'rgba(31,41,51,.28)';
+  c.lineWidth = 1 / opts.zoom;
+  c.strokeRect(item.x, item.y, item.w, item.h);
+  if (opts.skipTextOf !== item.id && !opts.hideFrameTitles) {
+    const size = 13 / opts.zoom;
+    c.font = fontOf(size, true);
+    c.fillStyle = '#5f6b7a';
+    c.textAlign = 'left';
+    c.textBaseline = 'alphabetic';
+    c.fillText(item.title || 'Frame', item.x + 1 / opts.zoom, item.y - size * 0.55, item.w);
+  }
+}
+
+function drawImage(c, item) {
+  const img = imageFor(item.asset);
+  if (img && img.complete && img.naturalWidth) c.drawImage(img, item.x, item.y, item.w, item.h);
+  else {
+    c.fillStyle = '#e4e0d6';
+    c.fillRect(item.x, item.y, item.w, item.h);
+  }
+}
+
+function drawItem(c, item, opts) {
+  switch (item.type) {
+    case 'sticky': drawSticky(c, item, opts); break;
+    case 'text': if (opts.skipTextOf !== item.id) drawLayout(c, item, item.color, opts.zoom); break;
+    case 'shape': drawShape(c, item, opts); break;
+    case 'line': drawLine(c, item, opts); break;
+    case 'pen': drawPen(c, item); break;
+    case 'frame': drawFrame(c, item, opts); break;
+    case 'image': drawImage(c, item); break;
+  }
+}
+
+// ---- Screen ---------------------------------------------------------------
+
+const PAPER = '#f6f4ee';
+
+function drawGrid(c, w, hgt) {
+  let step = 24;
+  while (step * view.z < 18) step *= 4;
+  const gap = step * view.z;
+  const ox = -((view.x * view.z) % gap);
+  const oy = -((view.y * view.z) % gap);
+  c.fillStyle = '#d4cfc2';
+  for (let x = ox; x < w; x += gap) for (let y = oy; y < hgt; y += gap) c.fillRect(x, y, 1.5, 1.5);
+}
+
+function render() {
+  needsFrame = false;
+  const dpr = window.devicePixelRatio || 1;
+  const w = stage.clientWidth, hgt = stage.clientHeight;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = present.on ? '#14181d' : PAPER;
+  ctx.fillRect(0, 0, w, hgt);
+  if (!present.on) drawGrid(ctx, w, hgt);
+
+  ctx.setTransform(dpr * view.z, 0, 0, dpr * view.z, -view.x * view.z * dpr, -view.y * view.z * dpr);
+  const vp = worldViewport();
+  const items = paintOrder();
+  const visible = items.filter(item => rectsTouch(padRect(bounds(item), 30), vp));
+  const opts = {
+    zoom: view.z,
+    skipTextOf: editing ? editing.id : null,
+    shadows: visible.length < 400 && view.z > 0.15,
+    background: PAPER,
+    hideFrameTitles: present.on,
+  };
+  for (const item of visible) drawItem(ctx, item, opts);
+  drawLivePreviews();
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (present.on) drawPresentMask(w, hgt);
+  else drawOverlay();
+
+  syncZoomLabel();
+  positionEditor();
+  positionContextBar();
+  drawMinimap();
+}
+
+const padRect = (r, p) => ({ x: r.x - p, y: r.y - p, w: r.w + p * 2, h: r.h + p * 2 });
+
+function drawLivePreviews() {
+  if (mode?.type === 'pen') drawPen(ctx, mode.preview());
+  if (tool === 'sticky' && pointer.inside && !mode) {
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = memory.stickyColor;
+    ctx.fillRect(pointer.world.x - 100, pointer.world.y - 100, 200, 200);
+    ctx.restore();
+  }
+  if (mode?.type === 'line' || mode?.type === 'quick') drawLine(ctx, mode.preview(), { zoom: view.z, background: PAPER });
+}
+
+function drawPresentMask(w, hgt) {
+  const frame = framesInOrder()[present.index];
+  if (!frame) return;
+  const r = screenRect(frame);
+  ctx.fillStyle = '#14181d';
+  ctx.fillRect(0, 0, w, r.y);
+  ctx.fillRect(0, r.y + r.h, w, hgt - r.y - r.h);
+  ctx.fillRect(0, r.y, r.x, r.h);
+  ctx.fillRect(r.x + r.w, r.y, w - r.x - r.w, r.h);
+}
+
+function outlineItem(item) {
+  ctx.strokeStyle = ACCENT;
+  ctx.lineWidth = 1.5;
+  if (item.type === 'line') {
+    const pts = linePath(item).map(toScreen);
+    ctx.beginPath();
+    pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.stroke();
+    return;
+  }
+  const r = screenRect(bounds(item));
+  ctx.strokeRect(r.x, r.y, r.w, r.h);
+}
+
+function drawHandle(p, shape = 'square') {
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = ACCENT;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (shape === 'square') ctx.roundRect(p.x - 5, p.y - 5, 10, 10, 2);
+  else ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function drawAnchors(item, active) {
+  for (const side of Object.keys(SIDES)) {
+    const p = toScreen(anchorPoint(item, side));
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, side === active ? 7 : 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = side === active ? ACCENT : '#fff';
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 1.5;
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
+function drawOverlay() {
+  const moving = mode?.type === 'move' && mode.started;
+
+  if (hover && !sel.has(hover.id) && !mode && doc.items.has(hover.id)) {
+    ctx.globalAlpha = 0.55;
+    outlineItem(doc.items.get(hover.id));
+    ctx.globalAlpha = 1;
+  }
+
+  const items = selectedItems();
+  if (items.length > 1) items.forEach(outlineItem);
+  if (items.length && !editing) {
+    if (items.length === 1) outlineItem(items[0]);
+    else {
+      const r = screenRect(unionBounds(items));
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = ACCENT;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(r.x, r.y, r.w, r.h);
+      ctx.setLineDash([]);
+    }
+    if (items.some(i => i.locked) && !moving) {
+      const r = screenRect(unionBounds(items));
+      ctx.font = fontOf(12, true);
+      ctx.fillStyle = ACCENT;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('Locked', r.x, r.y - 6);
+    }
+    if (!moving) {
+      for (const hd of selectionHandles()) drawHandle(hd, hd.end ? 'round' : 'square');
+      for (const dot of quickDots()) drawQuickDot(dot);
+    }
+  }
+
+  if (connectHint) {
+    const item = doc.items.get(connectHint.id);
+    if (item) drawAnchors(item, connectHint.side);
+  }
+
+  if (mode?.type === 'marquee' && mode.rect) {
+    const r = screenRect(mode.rect);
+    ctx.fillStyle = 'rgba(14,124,102,.10)';
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 1;
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.strokeRect(r.x, r.y, r.w, r.h);
+  }
+
+  if (mode?.type === 'draw' && mode.rect) {
+    const r = screenRect(mode.rect);
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(r.x, r.y, r.w, r.h);
+    ctx.setLineDash([]);
+  }
+
+  if (mode?.guides) {
+    ctx.strokeStyle = '#d6336c';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const g of mode.guides) {
+      const a = toScreen(g.a), b = toScreen(g.b);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke();
+  }
+
+  if (find.matches.length) {
+    ctx.lineWidth = 2;
+    find.matches.forEach((id, i) => {
+      const item = doc.items.get(id);
+      if (!item) return;
+      const r = screenRect(padRect(bounds(item), 4 / view.z));
+      ctx.strokeStyle = i === find.index ? '#d6336c' : 'rgba(214,51,108,.4)';
+      ctx.strokeRect(r.x, r.y, r.w, r.h);
+    });
+  }
+}
+
+function drawQuickDot(dot) {
+  ctx.beginPath();
+  ctx.arc(dot.x, dot.y, 8, 0, Math.PI * 2);
+  ctx.fillStyle = ACCENT;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(dot.x - 3.5, dot.y);
+  ctx.lineTo(dot.x + 3.5, dot.y);
+  ctx.moveTo(dot.x, dot.y - 3.5);
+  ctx.lineTo(dot.x, dot.y + 3.5);
+  ctx.stroke();
+}
+
+// ---- Minimap --------------------------------------------------------------
+
+const minimap = $('#minimap');
+const miniCtx = minimap.getContext('2d');
+
+function minimapFrame() {
+  const items = [...doc.items.values()];
+  const vp = worldViewport();
+  const all = items.length ? padRect(unionBounds(items), 200) : vp;
+  const l = Math.min(all.x, vp.x), t = Math.min(all.y, vp.y);
+  const r = Math.max(all.x + all.w, vp.x + vp.w), b = Math.max(all.y + all.h, vp.y + vp.h);
+  const scale = Math.min(minimap.width / (r - l), minimap.height / (b - t));
+  const ox = (minimap.width - (r - l) * scale) / 2 - l * scale;
+  const oy = (minimap.height - (b - t) * scale) / 2 - t * scale;
+  return { scale, ox, oy, vp };
+}
+
+function drawMinimap() {
+  if (minimap.hidden) return;
+  const m = miniCtx;
+  const { scale, ox, oy, vp } = minimapFrame();
+  m.fillStyle = '#fff';
+  m.fillRect(0, 0, minimap.width, minimap.height);
+  for (const item of paintOrder()) {
+    const b = bounds(item);
+    m.fillStyle = item.type === 'sticky' ? item.color : item.type === 'frame' ? '#efece3' : item.type === 'shape' && item.fill !== 'transparent' ? item.fill : '#aeb4bd';
+    m.fillRect(b.x * scale + ox, b.y * scale + oy, Math.max(b.w * scale, 1.5), Math.max(b.h * scale, 1.5));
+  }
+  m.strokeStyle = ACCENT;
+  m.lineWidth = 1.5;
+  m.strokeRect(vp.x * scale + ox, vp.y * scale + oy, vp.w * scale, vp.h * scale);
+}
+
+// Operations on the selection and the viewport, shared by keyboard, menus and toolbars.
+
+function selectionChanged() {
+  refreshContextBar();
+  invalidate();
+}
+
+function setSelection(ids) {
+  sel.clear();
+  for (const id of ids) if (doc.items.has(id)) sel.add(id);
+  selectionChanged();
+}
+
+function withGroup(item) {
+  if (!item.group) return [item.id];
+  return doc.order.filter(id => doc.items.get(id).group === item.group);
+}
+
+// ---- Viewport -------------------------------------------------------------
+
+function zoomAt(screenPoint, nextZ) {
+  const z = clamp(nextZ, MIN_ZOOM, MAX_ZOOM);
+  const world = toWorld(screenPoint);
+  view.z = z;
+  view.x = world.x - screenPoint.x / z;
+  view.y = world.y - screenPoint.y / z;
+  invalidate();
+}
+
+const stageCenter = () => ({ x: stage.clientWidth / 2, y: stage.clientHeight / 2 });
+
+let viewAnimation = 0;
+function animateView(target, ms = 260) {
+  const from = { ...view };
+  const started = performance.now();
+  const token = ++viewAnimation;
+  const step = now => {
+    if (token !== viewAnimation) return;
+    const t = clamp((now - started) / ms, 0, 1);
+    const e = 1 - (1 - t) ** 3;
+    // Interpolating the screen centre (not the corner) keeps the motion straight when zoom changes.
+    const w = stage.clientWidth / 2, hh = stage.clientHeight / 2;
+    const z = from.z * (target.z / from.z) ** e;
+    const cx = (from.x + w / from.z) + ((target.x + w / target.z) - (from.x + w / from.z)) * e;
+    const cy = (from.y + hh / from.z) + ((target.y + hh / target.z) - (from.y + hh / from.z)) * e;
+    view.z = z;
+    view.x = cx - w / z;
+    view.y = cy - hh / z;
+    invalidate();
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function viewFor(box, pad) {
+  const w = stage.clientWidth, hh = stage.clientHeight;
+  const z = clamp(Math.min((w - pad * 2) / Math.max(box.w, 1), (hh - pad * 2) / Math.max(box.h, 1)), MIN_ZOOM, MAX_ZOOM);
+  return { z, x: box.x + box.w / 2 - w / 2 / z, y: box.y + box.h / 2 - hh / 2 / z };
+}
+
+function zoomToActualSize() {
+  const c = center(worldViewport());
+  animateView({ z: 1, x: c.x - stage.clientWidth / 2, y: c.y - stage.clientHeight / 2 });
+}
+
+function fitBoard() {
+  const box = unionBounds(doc.items.values());
+  if (box) animateView(viewFor(box, 90));
+  else animateView({ x: -stage.clientWidth / 2, y: -stage.clientHeight / 2, z: 1 });
+}
+
+function zoomToSelection() {
+  const box = unionBounds(selectedItems());
+  if (box) animateView(viewFor(box, 140));
+}
+
+function keepOnScreen(item) {
+  const vp = worldViewport();
+  const margin = 90 / view.z;
+  const inner = padRect(vp, -margin);
+  if (rectInside(bounds(item), inner)) return;
+  const c = center(bounds(item));
+  animateView({ z: view.z, x: c.x - vp.w / 2, y: c.y - vp.h / 2 }, 200);
+}
+
+// ---- Clone / delete -------------------------------------------------------
+
+// Connectors stay attached inside the copied set; ends pointing outside it
+// become free points so a copy never silently rewires the original.
+function detachOutside(items) {
+  const inside = new Set(items.map(i => i.id));
+  return items.map(item => {
+    if (item.type !== 'line') return item;
+    const ends = lineEnds(item);
+    const keep = (end, at) => (!end.id || inside.has(end.id) ? end : { x: at.x, y: at.y });
+    return { ...item, a: keep(item.a, ends.a), b: keep(item.b, ends.b) };
+  });
+}
+
+function cloneItems(items, dx, dy) {
+  const idMap = new Map(items.map(i => [i.id, uid()]));
+  const groupMap = new Map();
+  const made = [];
+  for (const item of items) {
+    const next = { ...item, id: idMap.get(item.id) };
+    if (item.group) {
+      if (!groupMap.has(item.group)) groupMap.set(item.group, uid());
+      next.group = groupMap.get(item.group);
+    }
+    if (item.type === 'line') {
+      const mapEnd = end => (end.id ? { id: idMap.get(end.id), side: end.side } : { x: end.x + dx, y: end.y + dy });
+      next.a = mapEnd(item.a);
+      next.b = mapEnd(item.b);
+    } else {
+      next.x += dx;
+      next.y += dy;
+    }
+    if (item.type === 'frame') next.seq = nextFrameSeq() + made.length;
+    made.push(addItem(next));
+  }
+  return made;
+}
+
+const nextFrameSeq = () => framesInOrder().reduce((m, f) => Math.max(m, f.seq + 1), 0);
+
+function duplicateSelection() {
+  const items = selectedItems();
+  if (!items.length) return;
+  const made = cloneItems(detachOutside(items), 24, 24);
+  setSelection(made.map(i => i.id));
+  commit();
+}
+
+function removeItems(ids) {
+  const gone = new Set(ids);
+  for (const item of doc.items.values()) {
+    if (item.type !== 'line' || gone.has(item.id)) continue;
+    const ends = lineEnds(item);
+    const changes = {};
+    if (gone.has(item.a.id)) changes.a = { x: ends.a.x, y: ends.a.y };
+    if (gone.has(item.b.id)) changes.b = { x: ends.b.x, y: ends.b.y };
+    if (changes.a || changes.b) patch(item.id, changes);
+  }
+  for (const id of gone) doc.items.delete(id);
+  doc.order = doc.order.filter(id => !gone.has(id));
+}
+
+function deleteSelection() {
+  const ids = selectedItems().filter(i => !i.locked).map(i => i.id);
+  if (!ids.length) return;
+  removeItems(ids);
+  setSelection([]);
+  commit();
+}
+
+// ---- Clipboard ------------------------------------------------------------
+
+let clip = null;
+
+function copySelection(e) {
+  const items = selectedItems();
+  if (!items.length) return false;
+  const text = items.map(i => (i.type === 'frame' ? i.title : i.text)).filter(Boolean).join('\n');
+  clip = { items: detachOutside(items), text };
+  e.clipboardData.setData('text/plain', text);
+  e.preventDefault();
+  return true;
+}
+
+function pasteClip() {
+  const box = unionBounds(clip.items.filter(i => i.type !== 'line')) || { x: 0, y: 0, w: 0, h: 0 };
+  const spot = pointer.inside ? pointer.world : toWorld(stageCenter());
+  const made = cloneItems(clip.items, spot.x - box.x - box.w / 2, spot.y - box.y - box.h / 2);
+  setSelection(made.map(i => i.id));
+  commit();
+}
+
+// One sticky per line, the quickest route from a list of ideas onto the board.
+function pasteLines(text) {
+  const lines = text.split(/\r?\n/).map(l => l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, '').trim()).filter(Boolean).slice(0, 500);
+  if (!lines.length) return;
+  const spot = pointer.inside ? pointer.world : toWorld(stageCenter());
+  const cols = Math.ceil(Math.sqrt(lines.length));
+  const cell = 220;
+  const rows = Math.ceil(lines.length / cols);
+  const made = lines.map((line, i) => addItem(makeItem('sticky', {
+    x: spot.x - (cols * cell - 20) / 2 + (i % cols) * cell,
+    y: spot.y - (rows * cell - 20) / 2 + Math.floor(i / cols) * cell,
+    text: line,
+  })));
+  setSelection(made.map(i => i.id));
+  commit();
+  if (made.length > 1) toast(`Added ${made.length} stickies`);
+}
+
+// ---- Arrangement ----------------------------------------------------------
+
+function reorder(toFront) {
+  const ids = doc.order.filter(id => sel.has(id));
+  if (!ids.length) return;
+  const rest = doc.order.filter(id => !sel.has(id));
+  doc.order = toFront ? rest.concat(ids) : ids.concat(rest);
+  commit();
+}
+
+function toggleLock() {
+  const items = selectedItems();
+  const lock = items.some(i => !i.locked);
+  for (const item of items) patch(item.id, { locked: lock });
+  commit();
+  refreshContextBar();
+}
+
+function groupSelection() {
+  const items = selectedItems();
+  if (items.length < 2) return;
+  const gid = uid();
+  for (const item of items) patch(item.id, { group: gid });
+  commit();
+  refreshContextBar();
+}
+
+function ungroupSelection() {
+  for (const item of selectedItems()) patch(item.id, { group: null });
+  commit();
+  refreshContextBar();
+}
+
+function moveItem(item, dx, dy) {
+  if (item.type === 'line') {
+    return {
+      a: item.a.id ? item.a : { x: item.a.x + dx, y: item.a.y + dy },
+      b: item.b.id ? item.b : { x: item.b.x + dx, y: item.b.y + dy },
+    };
+  }
+  return { x: item.x + dx, y: item.y + dy };
+}
+
+function alignSelection(edge) {
+  const items = selectedItems().filter(i => !i.locked && i.type !== 'line');
+  const box = unionBounds(items);
+  if (items.length < 2) return;
+  for (const item of items) {
+    const b = bounds(item);
+    const dx = edge === 'left' ? box.x - b.x : edge === 'right' ? box.x + box.w - b.x - b.w : edge === 'hcenter' ? box.x + (box.w - b.w) / 2 - b.x : 0;
+    const dy = edge === 'top' ? box.y - b.y : edge === 'bottom' ? box.y + box.h - b.y - b.h : edge === 'vcenter' ? box.y + (box.h - b.h) / 2 - b.y : 0;
+    patch(item.id, moveItem(item, dx, dy));
+  }
+  commit();
+}
+
+function distributeSelection(axis) {
+  const items = selectedItems().filter(i => !i.locked && i.type !== 'line');
+  if (items.length < 3) return;
+  const pos = axis === 'x' ? 'x' : 'y';
+  const size = axis === 'x' ? 'w' : 'h';
+  const sorted = items.slice().sort((a, b) => a[pos] - b[pos]);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const used = sorted.reduce((sum, i) => sum + i[size], 0);
+  const gap = (last[pos] + last[size] - first[pos] - used) / (sorted.length - 1);
+  let at = first[pos];
+  for (const item of sorted) {
+    patch(item.id, { [pos]: at });
+    at += item[size] + gap;
+  }
+  commit();
+}
+
+// Lays the selection out in a tidy grid, keeping rough reading order.
+function tidySelection() {
+  const items = selectedItems().filter(i => !i.locked && i.type !== 'line' && i.type !== 'frame');
+  if (items.length < 2) return;
+  const box = unionBounds(items);
+  const cellW = Math.max(...items.map(i => i.w)) + 20;
+  const cellH = Math.max(...items.map(i => i.h)) + 20;
+  const cols = clamp(Math.round(box.w / cellW) || 1, 1, Math.ceil(Math.sqrt(items.length) * 1.5));
+  const rowOf = i => Math.round((i.y - box.y) / cellH);
+  const sorted = items.slice().sort((a, b) => rowOf(a) - rowOf(b) || a.x - b.x);
+  sorted.forEach((item, i) => patch(item.id, {
+    x: box.x + (i % cols) * cellW + (cellW - 20 - item.w) / 2,
+    y: box.y + Math.floor(i / cols) * cellH + (cellH - 20 - item.h) / 2,
+  }));
+  commit();
+}
+
+function changeSelection(fn) {
+  for (const item of selectedItems()) {
+    if (item.locked) continue;
+    const changes = fn(item);
+    if (!changes) continue;
+    const next = patch(item.id, changes);
+    if (next.type === 'text') doc.items.set(next.id, withTextHeight(next));
+  }
+  commit();
+  refreshContextBar();
+}
+
+// ---- Creation -------------------------------------------------------------
+
+function overlapsAny(box, ignoreId) {
+  for (const item of doc.items.values()) {
+    if (item.id === ignoreId || item.type === 'line' || item.type === 'frame' || item.type === 'pen') continue;
+    if (rectsTouch(box, item)) return true;
+  }
+  return false;
+}
+
+function createStickyAt(world) {
+  const item = addItem(makeItem('sticky', { x: world.x - 100, y: world.y - 100 }));
+  setSelection([item.id]);
+  startEdit(item.id);
+  return item;
+}
+
+function nextSticky(from, direction) {
+  const gap = 20;
+  const box = { x: from.x, y: from.y, w: from.w, h: from.h };
+  const stepX = direction === 'right' ? from.w + gap : 0;
+  const stepY = direction === 'down' ? from.h + gap : 0;
+  do {
+    box.x += stepX;
+    box.y += stepY;
+  } while (overlapsAny(box));
+  const item = addItem(makeItem('sticky', { ...box, color: from.color }));
+  setSelection([item.id]);
+  keepOnScreen(item);
+  startEdit(item.id);
+}
+
+function sibling(src, side, at) {
+  const box = bounds(src);
+  const { dx, dy } = SIDES[side];
+  const gap = 90;
+  const spot = at
+    ? { x: at.x - box.w / 2, y: at.y - box.h / 2, w: box.w, h: box.h }
+    : { x: box.x + dx * (box.w + gap), y: box.y + dy * (box.h + gap), w: box.w, h: box.h };
+  if (!at) {
+    while (overlapsAny(spot, src.id)) {
+      spot.x += dy ? box.w + 24 : 0;
+      spot.y += dx ? box.h + 24 : 0;
+    }
+  }
+  const { id: _id, text: _text, locked: _locked, group: _group, ...style } = src;
+  return addItem({ ...style, ...spot, id: uid(), text: '', locked: false, group: null });
+}
+
+function connect(fromId, fromSide, toEnd) {
+  return addItem(makeItem('line', { a: { id: fromId, side: fromSide }, b: toEnd }));
+}
+
+function quickCreate(fromId, side, at) {
+  const src = doc.items.get(fromId);
+  const made = sibling(src, side, at);
+  const toSide = at ? 'auto' : SIDES[side].opposite;
+  connect(fromId, at ? 'auto' : side, { id: made.id, side: toSide });
+  setSelection([made.id]);
+  keepOnScreen(made);
+  startEdit(made.id);
+}
+
+// ---- Images ---------------------------------------------------------------
+
+const IMAGE_TYPES = /^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$/i;
+
+function readAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addImageFile(file, world) {
+  const url = await readAsDataURL(file);
+  if (!IMAGE_TYPES.test(url)) { toast('Only PNG, JPEG, GIF and WebP images can be added', true); return null; }
+  const img = new Image();
+  img.src = url;
+  await img.decode();
+  const scale = Math.min(1, 640 / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = img.naturalWidth * scale, hh = img.naturalHeight * scale;
+  const asset = uid();
+  doc.assets.set(asset, url);
+  return addItem(makeItem('image', { x: world.x - w / 2, y: world.y - hh / 2, w, h: hh, asset }));
+}
+
+async function addImageFiles(files, world) {
+  const made = [];
+  let at = { ...world };
+  for (const file of files) {
+    try {
+      const item = await addImageFile(file, at);
+      if (item) { made.push(item.id); at = { x: at.x + 40, y: at.y + 40 }; }
+    } catch { toast(`Could not read ${file.name || 'image'}`, true); }
+  }
+  if (made.length) { setSelection(made); commit(); }
+}
+
+// ---- Find -----------------------------------------------------------------
+
+const find = { matches: [], index: 0 };
+
+function runFind(query) {
+  const q = query.trim().toLowerCase();
+  find.matches = !q ? [] : paintOrder()
+    .filter(i => ((i.type === 'frame' ? i.title : i.text) || '').toLowerCase().includes(q))
+    .map(i => i.id);
+  find.index = 0;
+  syncFindCount();
+  if (find.matches.length) goToMatch();
+  invalidate();
+}
+
+function goToMatch() {
+  const item = doc.items.get(find.matches[find.index]);
+  if (!item) return;
+  const vp = worldViewport();
+  const box = bounds(item);
+  if (!rectInside(box, padRect(vp, -80 / view.z))) {
+    const c = center(box);
+    animateView({ z: view.z, x: c.x - vp.w / 2, y: c.y - vp.h / 2 });
+  }
+}
+
+function stepFind(delta) {
+  if (!find.matches.length) return;
+  find.index = (find.index + delta + find.matches.length) % find.matches.length;
+  syncFindCount();
+  goToMatch();
+  invalidate();
+}
+
+// ---- Present --------------------------------------------------------------
+
+const present = { on: false, index: 0 };
+
+function startPresenting() {
+  if (!framesInOrder().length) { toast('Add a frame first (press F): each frame becomes a slide'); return; }
+  commitEdit();
+  setSelection([]);
+  present.on = true;
+  document.body.classList.add('presenting');
+  $('#presentBar').hidden = false;
+  document.documentElement.requestFullscreen?.().catch(() => {});
+  showFrame(0);
+}
+
+function showFrame(index) {
+  const frames = framesInOrder();
+  if (!frames.length) { endPresenting(); return; }
+  present.index = clamp(index, 0, frames.length - 1);
+  const frame = frames[present.index];
+  $('#presentLabel').textContent = `${present.index + 1} / ${frames.length}  ${frame.title || 'Frame'}`;
+  animateView(viewFor(frame, 0), 320);
+  invalidate();
+}
+
+function endPresenting() {
+  if (!present.on) return;
+  present.on = false;
+  document.body.classList.remove('presenting');
+  $('#presentBar').hidden = true;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  invalidate();
+}
+
+// Pointer and keyboard input, and the in-place text editor.
+
+let tool = 'select';
+let mode = null;
+let hover = null;
+let connectHint = null;
+let spaceDown = false;
+const pointer = { x: 0, y: 0, world: { x: 0, y: 0 }, inside: false };
+
+function setTool(next) {
+  tool = next;
+  mode = null;
+  if (next !== 'select') setSelection([]);
+  syncToolbar();
+  syncCursor();
+  invalidate();
+}
+
+function syncCursor(cursor) {
+  if (cursor) { canvas.style.cursor = cursor; return; }
+  if (spaceDown || tool === 'hand') canvas.style.cursor = mode?.type === 'pan' ? 'grabbing' : 'grab';
+  else if (tool === 'select') canvas.style.cursor = 'default';
+  else canvas.style.cursor = 'crosshair';
+}
+
+function trackPointer(e) {
+  const r = stage.getBoundingClientRect();
+  pointer.x = e.clientX - r.left;
+  pointer.y = e.clientY - r.top;
+  pointer.world = toWorld(pointer);
+}
+
+// ---- Handles --------------------------------------------------------------
+
+function selectionHandles() {
+  const items = selectedItems();
+  if (!items.length || items.some(i => i.locked)) return [];
+  if (items.length === 1 && items[0].type === 'line') {
+    const ends = lineEnds(items[0]);
+    return [{ ...toScreen(ends.a), end: 'a' }, { ...toScreen(ends.b), end: 'b' }];
+  }
+  if (items.every(i => i.type === 'line')) return [];
+  const r = screenRect(unionBounds(items));
+  const mx = r.x + r.w / 2, my = r.y + r.h / 2, R = r.x + r.w, B = r.y + r.h;
+  const handles = [
+    { x: r.x, y: r.y, pos: 'nw' }, { x: R, y: r.y, pos: 'ne' },
+    { x: r.x, y: B, pos: 'sw' }, { x: R, y: B, pos: 'se' },
+  ];
+  const single = items.length === 1 ? items[0] : null;
+  if (single && (single.type === 'shape' || single.type === 'frame')) {
+    handles.push({ x: mx, y: r.y, pos: 'n' }, { x: mx, y: B, pos: 's' });
+  }
+  if (single && (single.type === 'shape' || single.type === 'frame' || single.type === 'text')) {
+    handles.push({ x: r.x, y: my, pos: 'w' }, { x: R, y: my, pos: 'e' });
+  }
+  return handles;
+}
+
+function quickDots() {
+  if (sel.size !== 1 || mode) return [];
+  const item = selectedItems()[0];
+  if (!item || item.locked || (item.type !== 'sticky' && item.type !== 'shape')) return [];
+  const r = screenRect(item);
+  const gap = 24;
+  return [
+    { side: 't', x: r.x + r.w / 2, y: r.y - gap }, { side: 'r', x: r.x + r.w + gap, y: r.y + r.h / 2 },
+    { side: 'b', x: r.x + r.w / 2, y: r.y + r.h + gap }, { side: 'l', x: r.x - gap, y: r.y + r.h / 2 },
+  ];
+}
+
+const HANDLE_CURSORS = { nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize' };
+const near = (a, b, d) => Math.hypot(a.x - b.x, a.y - b.y) <= d;
+
+// ---- Pointer down ---------------------------------------------------------
+
+function onPointerDown(e) {
+  closePopover();
+  if (editing) commitEdit();
+  document.activeElement?.blur?.();
+  trackPointer(e);
+  canvas.setPointerCapture(e.pointerId);
+
+  if (present.on) {
+    if (e.button === 0) showFrame(present.index + 1);
+    return;
+  }
+  if (e.button === 1 || e.button === 2 || (e.button === 0 && (spaceDown || tool === 'hand'))) {
+    mode = { type: 'pan', sx: pointer.x, sy: pointer.y, vx: view.x, vy: view.y, moved: false, button: e.button };
+    syncCursor();
+    return;
+  }
+  if (e.button !== 0) return;
+
+  switch (tool) {
+    case 'select': return selectDown(e);
+    case 'sticky': {
+      const item = createStickyAt(pointer.world);
+      setTool('select');
+      setSelection([item.id]);
+      return;
+    }
+    case 'pen': return penDown();
+    case 'eraser': mode = { type: 'erase' }; eraseAt(pointer.world); return;
+    case 'line': return lineDown();
+    case 'text': case 'shape': case 'frame':
+      mode = { type: 'draw', kind: tool, start: { ...pointer.world }, rect: null };
+      return;
+  }
+}
+
+function selectDown(e) {
+  const hit = selectionHandles().find(hd => near(hd, pointer, 9));
+  if (hit) {
+    if (hit.end) startEndpointDrag(hit.end);
+    else startResize(hit.pos);
+    return;
+  }
+  const dot = quickDots().find(d => near(d, pointer, 11));
+  if (dot) {
+    const fromId = selectedItems()[0].id;
+    mode = {
+      type: 'quick', fromId, side: dot.side, moved: false, origin: { x: pointer.x, y: pointer.y },
+      preview() {
+        return makeItem('line', { a: { id: fromId, side: dot.side }, b: connectHint || { ...pointer.world } });
+      },
+    };
+    return;
+  }
+
+  const item = hitTest(pointer.world);
+  if (!item) {
+    if (!e.shiftKey) setSelection([]);
+    mode = { type: 'marquee', start: { ...pointer.world }, base: e.shiftKey ? [...sel] : [], rect: null };
+    return;
+  }
+  const soleBefore = sel.size === 1 && sel.has(item.id);
+  const ids = withGroup(item);
+  if (e.shiftKey) {
+    const removing = sel.has(item.id);
+    const next = new Set(sel);
+    for (const id of ids) { if (removing) next.delete(id); else next.add(id); }
+    setSelection(next);
+    if (removing) return;
+  } else if (!sel.has(item.id)) {
+    setSelection(ids);
+  }
+  mode = { type: 'move', started: false, start: { ...pointer.world }, alt: e.altKey, clickedId: item.id, soleBefore };
+}
+
+function moveTargets() {
+  const ids = new Set();
+  for (const item of selectedItems()) {
+    if (item.locked) continue;
+    ids.add(item.id);
+    if (item.type !== 'frame') continue;
+    for (const other of doc.items.values()) {
+      if (other.type !== 'frame' && !other.locked && rectHas(item, center(bounds(other)))) ids.add(other.id);
+    }
+  }
+  return ids;
+}
+
+function startMove() {
+  if (mode.alt) {
+    const made = cloneItems(detachOutside(selectedItems()), 0, 0);
+    setSelection(made.map(i => i.id));
+  }
+  mode.started = true;
+  mode.targets = moveTargets();
+  mode.orig = new Map([...mode.targets].map(id => [id, doc.items.get(id)]));
+  mode.box = unionBounds(selectedItems());
+  mode.snapLines = snapCandidates(mode.targets);
+  refreshContextBar();
+}
+
+// ---- Snapping -------------------------------------------------------------
+
+function snapCandidates(exclude) {
+  const vp = padRect(worldViewport(), 200);
+  const xs = [], ys = [];
+  for (const item of doc.items.values()) {
+    if (exclude.has(item.id) || item.type === 'line' || item.type === 'pen') continue;
+    const b = bounds(item);
+    if (!rectsTouch(b, vp)) continue;
+    xs.push({ v: b.x, b }, { v: b.x + b.w / 2, b }, { v: b.x + b.w, b });
+    ys.push({ v: b.y, b }, { v: b.y + b.h / 2, b }, { v: b.y + b.h, b });
+  }
+  return { xs, ys };
+}
+
+function snap(box, candidates) {
+  const reach = 6 / view.z;
+  let dx = 0, dy = 0, bestX = reach, bestY = reach, gx = null, gy = null;
+  for (const edge of [box.x, box.x + box.w / 2, box.x + box.w]) {
+    for (const c of candidates.xs) {
+      const d = Math.abs(c.v - edge);
+      if (d < bestX) { bestX = d; dx = c.v - edge; gx = c; }
+    }
+  }
+  for (const edge of [box.y, box.y + box.h / 2, box.y + box.h]) {
+    for (const c of candidates.ys) {
+      const d = Math.abs(c.v - edge);
+      if (d < bestY) { bestY = d; dy = c.v - edge; gy = c; }
+    }
+  }
+  const guides = [];
+  if (gx) guides.push({ a: { x: gx.v, y: Math.min(box.y + dy, gx.b.y) }, b: { x: gx.v, y: Math.max(box.y + box.h + dy, gx.b.y + gx.b.h) } });
+  if (gy) guides.push({ a: { x: Math.min(box.x + dx, gy.b.x), y: gy.v }, b: { x: Math.max(box.x + box.w + dx, gy.b.x + gy.b.w), y: gy.v } });
+  return { dx, dy, guides };
+}
+
+// ---- Resize ---------------------------------------------------------------
+
+function startResize(pos) {
+  const items = selectedItems();
+  mode = { type: 'resize', pos, box: unionBounds(items), orig: new Map(items.map(i => [i.id, i])), single: items.length === 1 ? items[0] : null };
+}
+
+function resizedBox(o, pos, p, keep) {
+  let l = o.x, t = o.y, r = o.x + o.w, b = o.y + o.h;
+  if (pos.includes('w')) l = Math.min(p.x, r - MIN_SIZE);
+  if (pos.includes('e')) r = Math.max(p.x, l + MIN_SIZE);
+  if (pos.includes('n')) t = Math.min(p.y, b - MIN_SIZE);
+  if (pos.includes('s')) b = Math.max(p.y, t + MIN_SIZE);
+  if (keep && pos.length === 2) {
+    const s = Math.max((r - l) / o.w, (b - t) / o.h);
+    const w = o.w * s, hh = o.h * s;
+    if (pos.includes('w')) l = r - w; else r = l + w;
+    if (pos.includes('n')) t = b - hh; else b = t + hh;
+  }
+  return { x: l, y: t, w: r - l, h: b - t };
+}
+
+function scaledItem(item, from, to) {
+  const sx = to.w / from.w, sy = to.h / from.h;
+  const mapX = x => to.x + (x - from.x) * sx;
+  const mapY = y => to.y + (y - from.y) * sy;
+  if (item.type === 'line') {
+    const mapEnd = end => (end.id ? end : { x: mapX(end.x), y: mapY(end.y) });
+    return { a: mapEnd(item.a), b: mapEnd(item.b) };
+  }
+  const changes = { x: mapX(item.x), y: mapY(item.y), w: item.w * sx, h: item.h * sy };
+  if (item.fontSize && Math.abs(sx - sy) < 1e-6) changes.fontSize = Math.max(6, item.fontSize * sx);
+  return changes;
+}
+
+function applyResize(e) {
+  const { pos, box, orig, single } = mode;
+  const isType = t => single?.type === t;
+  const keepAlways = !single || isType('sticky') || isType('pen') || isType('text');
+  const keep = keepAlways || (isType('image') ? !e.shiftKey : e.shiftKey);
+  const next = resizedBox(box, pos, pointer.world, keep);
+
+  if (isType('text') && pos.length === 1) {
+    doc.items.set(single.id, withTextHeight({ ...single, x: next.x, w: next.w }));
+  } else if (single && (isType('shape') || isType('frame') || isType('image'))) {
+    patch(single.id, { x: next.x, y: next.y, w: next.w, h: next.h });
+  } else {
+    for (const [id, item] of orig) {
+      const updated = patch(id, scaledItem(item, box, next));
+      if (updated.type === 'text') doc.items.set(id, withTextHeight(updated));
+    }
+  }
+}
+
+// ---- Connectors -----------------------------------------------------------
+
+function lineDown() {
+  const start = connectTarget(pointer.world) || { ...pointer.world };
+  mode = {
+    type: 'line', start, origin: { ...pointer.world },
+    preview() {
+      return makeItem('line', { a: start, b: connectHint || { ...pointer.world } });
+    },
+  };
+}
+
+function startEndpointDrag(which) {
+  const line = selectedItems()[0];
+  mode = { type: 'endpoint', which, id: line.id };
+}
+
+function finishLine() {
+  const { start, origin } = mode;
+  const end = connectTarget(pointer.world, start.id) || { ...pointer.world };
+  const tiny = !start.id && !end.id && near(origin, pointer.world, 8 / view.z);
+  const b = tiny ? { x: origin.x + 200, y: origin.y } : end;
+  const item = addItem(makeItem('line', { a: start, b }));
+  mode = null;
+  setTool('select');
+  setSelection([item.id]);
+  commit();
+}
+
+function finishQuick() {
+  const { fromId, side, moved } = mode;
+  mode = null;
+  if (!moved) { quickCreate(fromId, side); return; }
+  const target = connectTarget(pointer.world, fromId);
+  if (target) {
+    const line = connect(fromId, side, target);
+    setSelection([line.id]);
+    commit();
+    return;
+  }
+  quickCreate(fromId, side, { ...pointer.world });
+}
+
+// ---- Freehand -------------------------------------------------------------
+
+function penDown() {
+  const start = { ...pointer.world };
+  const points = [start.x, start.y];
+  mode = {
+    type: 'pen', points,
+    preview() { return strokeFrom(points); },
+  };
+}
+
+function strokeFrom(points) {
+  let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+  for (let i = 0; i < points.length; i += 2) {
+    l = Math.min(l, points[i]); r = Math.max(r, points[i]);
+    t = Math.min(t, points[i + 1]); b = Math.max(b, points[i + 1]);
+  }
+  const w = Math.max(r - l, 1), hh = Math.max(b - t, 1);
+  const pts = points.map((v, i) => Math.round((v - (i % 2 ? t : l)) * 100) / 100);
+  return makeItem('pen', { x: l, y: t, w, h: hh, ow: w, oh: hh, pts });
+}
+
+function eraseAt(p) {
+  const tol = 6 / view.z;
+  for (const item of doc.items.values()) {
+    if (item.type === 'pen' && !item.locked && penHit(item, p, tol)) removeItems([item.id]);
+  }
+  invalidate();
+}
+
+// ---- Pointer move / up ----------------------------------------------------
+
+function onPointerMove(e) {
+  trackPointer(e);
+  pointer.inside = true;
+
+  if (!mode) {
+    updateHover();
+    if (tool === 'sticky') invalidate();
+    return;
+  }
+  switch (mode.type) {
+    case 'pan':
+      if (!mode.moved && Math.hypot(pointer.x - mode.sx, pointer.y - mode.sy) < 4) return;
+      mode.moved = true;
+      view.x = mode.vx - (pointer.x - mode.sx) / view.z;
+      view.y = mode.vy - (pointer.y - mode.sy) / view.z;
+      break;
+    case 'marquee': {
+      const s = mode.start, p = pointer.world;
+      mode.rect = { x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) };
+      const picked = new Set(mode.base);
+      for (const item of doc.items.values()) {
+        const b = bounds(item);
+        const inside = item.type === 'frame' ? rectInside(b, mode.rect) : rectsTouch(b, mode.rect);
+        if (inside && !item.locked) for (const id of withGroup(item)) picked.add(id);
+      }
+      sel.clear();
+      for (const id of picked) sel.add(id);
+      break;
+    }
+    case 'move': {
+      if (!mode.started) {
+        if (near(mode.start, pointer.world, 3 / view.z)) return;
+        startMove();
+      }
+      let dx = pointer.world.x - mode.start.x;
+      let dy = pointer.world.y - mode.start.y;
+      mode.guides = null;
+      if (!e.ctrlKey && !e.metaKey && mode.box) {
+        const s = snap({ ...mode.box, x: mode.box.x + dx, y: mode.box.y + dy }, mode.snapLines);
+        dx += s.dx;
+        dy += s.dy;
+        mode.guides = s.guides;
+      }
+      for (const [id, item] of mode.orig) patch(id, moveItem(item, dx, dy));
+      break;
+    }
+    case 'resize': applyResize(e); break;
+    case 'draw': {
+      const s = mode.start, p = pointer.world;
+      if (!near(s, p, 4 / view.z)) {
+        mode.rect = { x: Math.min(s.x, p.x), y: Math.min(s.y, p.y), w: Math.abs(p.x - s.x), h: Math.abs(p.y - s.y) };
+      }
+      break;
+    }
+    case 'pen': {
+      const pts = mode.points;
+      const lx = pts[pts.length - 2], ly = pts[pts.length - 1];
+      if (Math.hypot(pointer.world.x - lx, pointer.world.y - ly) >= 1.5 / view.z) pts.push(pointer.world.x, pointer.world.y);
+      break;
+    }
+    case 'erase': eraseAt(pointer.world); break;
+    case 'line': connectHint = connectTarget(pointer.world, mode.start.id); break;
+    case 'quick':
+      if (near(pointer, mode.origin, 6)) return;
+      mode.moved = true;
+      connectHint = connectTarget(pointer.world, mode.fromId);
+      break;
+    case 'endpoint': {
+      const line = doc.items.get(mode.id);
+      const other = mode.which === 'a' ? line.b : line.a;
+      connectHint = connectTarget(pointer.world, other.id);
+      patch(mode.id, { [mode.which]: connectHint || { ...pointer.world } });
+      break;
+    }
+  }
+  invalidate();
+}
+
+function updateHover() {
+  if (tool === 'line') {
+    connectHint = connectTarget(pointer.world);
+    invalidate();
+    return;
+  }
+  if (connectHint) { connectHint = null; invalidate(); }
+  if (tool !== 'select' || spaceDown) { if (hover) { hover = null; invalidate(); } return; }
+
+  const handle = selectionHandles().find(hd => near(hd, pointer, 9));
+  if (handle) { syncCursor(handle.end ? 'move' : HANDLE_CURSORS[handle.pos]); return; }
+  if (quickDots().some(d => near(d, pointer, 11))) { syncCursor('pointer'); return; }
+
+  const item = hitTest(pointer.world);
+  if ((item?.id ?? null) !== (hover?.id ?? null)) { hover = item; invalidate(); }
+  syncCursor(item ? 'move' : 'default');
+}
+
+function onPointerUp(e) {
+  trackPointer(e);
+  if (!mode) return;
+  const m = mode;
+  switch (m.type) {
+    case 'pan':
+      mode = null;
+      syncCursor();
+      if (m.button === 2 && !m.moved) showContextMenu(e.clientX, e.clientY);
+      break;
+    case 'marquee':
+      mode = null;
+      selectionChanged();
+      break;
+    case 'move':
+      mode = null;
+      if (m.started) { commit(); refreshContextBar(); }
+      else if (m.soleBefore && !e.shiftKey && editableText(doc.items.get(m.clickedId))) startEdit(m.clickedId);
+      break;
+    case 'resize':
+    case 'erase':
+      mode = null;
+      commit();
+      break;
+    case 'endpoint':
+      mode = null;
+      connectHint = null;
+      commit();
+      break;
+    case 'draw': finishDraw(); break;
+    case 'pen': {
+      const item = strokeFrom(m.points);
+      mode = null;
+      addItem(item);
+      commit();
+      break;
+    }
+    case 'line': finishLine(); connectHint = null; break;
+    case 'quick': connectHint = null; finishQuick(); break;
+  }
+  invalidate();
+}
+
+const editableText = item => item && !item.locked && (TEXTUAL.has(item.type) || item.type === 'line' || item.type === 'frame');
+
+function finishDraw() {
+  const { kind, rect, start } = mode;
+  mode = null;
+  if (kind === 'text') {
+    const item = addItem(makeItem('text', rect && rect.w > 40 ? { x: rect.x, y: rect.y, w: rect.w } : { x: start.x, y: start.y - 16 }));
+    setTool('select');
+    setSelection([item.id]);
+    startEdit(item.id);
+  } else if (kind === 'shape') {
+    const r = rect && rect.w > 8 && rect.h > 8 ? rect : { x: start.x - 90, y: start.y - 60, w: 180, h: 120 };
+    const item = addItem(makeItem('shape', r));
+    setTool('select');
+    setSelection([item.id]);
+    commit();
+  } else {
+    const r = rect && rect.w > 40 && rect.h > 40 ? rect : { x: start.x - 480, y: start.y - 270, w: 960, h: 540 };
+    const seq = nextFrameSeq();
+    const item = addItem(makeItem('frame', { ...r, title: `Frame ${framesInOrder().length + 1}`, seq }));
+    setTool('select');
+    setSelection([item.id]);
+    commit();
+  }
+}
+
+function onDoubleClick() {
+  if (present.on || tool !== 'select' || editing) return;
+  const item = hitTest(pointer.world);
+  if (!item) {
+    const made = createStickyAt(pointer.world);
+    return made;
+  }
+  if (editableText(item)) startEdit(item.id);
+}
+
+function onWheel(e) {
+  if (e.target.closest && e.target.closest('#framesPanel, #pop')) return;
+  e.preventDefault();
+  if (present.on) return;
+  const r = stage.getBoundingClientRect();
+  const at = { x: e.clientX - r.left, y: e.clientY - r.top };
+  const unit = e.deltaMode === 1 ? 16 : 1;
+  // Notched mouse wheels send whole-number steps with no sideways motion;
+  // precision touchpads do not. Wheels zoom, touchpads pan, pinch zooms.
+  const notched = Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 50 && e.deltaX === 0 && !e.shiftKey;
+  if (e.ctrlKey || e.metaKey || notched) {
+    const speed = e.ctrlKey && !notched ? 0.01 : 0.0016;
+    zoomAt(at, view.z * Math.exp(-e.deltaY * unit * speed));
+  } else {
+    view.x += (e.shiftKey ? e.deltaY : e.deltaX) * unit / view.z;
+    view.y += (e.shiftKey ? 0 : e.deltaY) * unit / view.z;
+    invalidate();
+  }
+}
+
+// ---- Text editor ----------------------------------------------------------
+
+let editing = null;
+
+function editableValue(item) {
+  return item.type === 'frame' ? item.title : item.text;
+}
+
+function startEdit(id) {
+  if (editing) commitEdit();
+  const item = doc.items.get(id);
+  if (!item) return;
+  const single = item.type === 'frame' || item.type === 'line';
+  const area = h('textarea', {
+    className: `editor${single ? ' boxed' : ''}`,
+    value: editableValue(item) || '',
+    // Browser-level spellcheck can upload typed text to a cloud service, and
+    // the data-* opt-outs cover common grammar extensions.
+    spellcheck: false, autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off',
+    'aria-label': 'Edit text', 'data-gramm': 'false', 'data-gramm_editor': 'false', 'data-enable-grammarly': 'false', 'data-lt-active': 'false',
+  });
+  area.setAttribute('spellcheck', 'false');
+  area.setAttribute('autocorrect', 'off');
+  stage.append(area);
+  editing = { id, area, single };
+  area.addEventListener('input', () => { positionEditor(); });
+  area.addEventListener('keydown', onEditorKey);
+  area.addEventListener('blur', () => { if (editing?.area === area) commitEdit(); });
+  $('#hint').hidden = item.type !== 'sticky';
+  $('#hint').replaceChildren(h('b', {}, 'Tab'), ' next  ·  ', h('b', {}, 'Ctrl+Enter'), ' below  ·  ', h('b', {}, 'Esc'), ' done');
+  refreshContextBar();
+  positionEditor();
+  area.focus();
+  area.setSelectionRange(area.value.length, area.value.length);
+  invalidate();
+}
+
+function draftOf(item, text) {
+  return { ...item, text };
+}
+
+function positionEditor() {
+  if (!editing) return;
+  const item = doc.items.get(editing.id);
+  if (!item) { cancelEdit(); return; }
+  const area = editing.area;
+  const z = view.z;
+  const css = area.style;
+  if (item.type === 'frame') {
+    const p = toScreen(item);
+    css.left = `${p.x}px`; css.top = `${p.y - 28}px`; css.width = '240px'; css.height = '24px';
+    css.fontSize = '13px'; css.lineHeight = '24px'; css.fontWeight = '600'; css.color = INK; css.paddingTop = '0';
+    return;
+  }
+  if (item.type === 'line') {
+    const p = toScreen(pathMidpoint(linePath(item)));
+    css.left = `${p.x - 90}px`; css.top = `${p.y - 14}px`; css.width = '180px'; css.height = '28px';
+    css.fontSize = '15px'; css.lineHeight = '28px'; css.textAlign = 'center'; css.color = item.color; css.paddingTop = '0';
+    return;
+  }
+  const L = layoutOf(draftOf(item, area.value));
+  const box = screenRect(L.box);
+  css.left = `${box.x}px`;
+  css.top = `${box.y}px`;
+  css.width = `${box.w}px`;
+  css.fontSize = `${L.size * z}px`;
+  css.lineHeight = `${L.lineH * z}px`;
+  css.fontWeight = item.bold ? '600' : '400';
+  css.textAlign = item.align;
+  css.color = item.type === 'sticky' ? textOn(item.color) : item.color;
+  if (item.type === 'text') {
+    css.height = `${Math.max(L.totalH, L.lineH) * z + 4}px`;
+    css.paddingTop = '0';
+  } else {
+    css.height = `${box.h}px`;
+    css.paddingTop = `${Math.max(0, (L.top - L.box.y) * z)}px`;
+  }
+}
+
+function onEditorKey(e) {
+  e.stopPropagation();
+  const item = doc.items.get(editing.id);
+  if (e.key === 'Escape') { e.preventDefault(); commitEdit(); return; }
+  if (editing.single && e.key === 'Enter') { e.preventDefault(); commitEdit(); return; }
+  if (e.key === 'Tab' && item.type === 'sticky') {
+    e.preventDefault();
+    commitEdit();
+    nextSticky(doc.items.get(item.id), 'right');
+    return;
+  }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && item.type === 'sticky') {
+    e.preventDefault();
+    commitEdit();
+    nextSticky(doc.items.get(item.id), 'down');
+  }
+}
+
+function closeEditor() {
+  const { area } = editing;
+  editing = null;
+  area.remove();
+  $('#hint').hidden = true;
+  canvas.focus({ preventScroll: true });
+}
+
+function commitEdit() {
+  if (!editing) return;
+  const { id, area } = editing;
+  const value = area.value;
+  closeEditor();
+  const item = doc.items.get(id);
+  if (item) {
+    if (item.type === 'frame') patch(id, { title: value.trim() || item.title });
+    else if (item.type === 'text' && !value.trim()) { removeItems([id]); sel.delete(id); }
+    else {
+      const next = patch(id, { text: value });
+      if (next.type === 'text') doc.items.set(id, withTextHeight(next));
+    }
+  }
+  commit();
+  selectionChanged();
+}
+
+function cancelEdit() {
+  if (editing) closeEditor();
+}
+
+// ---- Keyboard -------------------------------------------------------------
+
+const TOOL_KEYS = { v: 'select', h: 'hand', n: 'sticky', t: 'text', s: 'shape', l: 'line', p: 'pen', e: 'eraser', f: 'frame' };
+
+function typingInField(target) {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+}
+
+function onKeyDown(e) {
+  if ($('#dialog').open) return;
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if (ctrl && e.key.toLowerCase() === 's') { e.preventDefault(); (e.shiftKey ? saveFileAs() : saveFile()); return; }
+  if (ctrl && e.key.toLowerCase() === 'o') { e.preventDefault(); openFile(); return; }
+  if (ctrl && e.key.toLowerCase() === 'f') { e.preventDefault(); openFind(); return; }
+  if (typingInField(e.target)) return;
+
+  if (present.on) {
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); showFrame(present.index + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); showFrame(present.index - 1); }
+    else if (e.key === 'Escape') endPresenting();
+    return;
+  }
+
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (!spaceDown) { spaceDown = true; syncCursor(); }
+    return;
+  }
+
+  if (ctrl) {
+    const key = e.key.toLowerCase();
+    const actions = {
+      z: () => (e.shiftKey ? redo() : undo()),
+      y: redo,
+      a: () => setSelection(doc.order.filter(id => !doc.items.get(id).locked)),
+      d: duplicateSelection,
+      g: () => (e.shiftKey ? ungroupSelection() : groupSelection()),
+      l: toggleLock,
+      '=': () => zoomAt(stageCenter(), view.z * 1.25),
+      '+': () => zoomAt(stageCenter(), view.z * 1.25),
+      '-': () => zoomAt(stageCenter(), view.z / 1.25),
+      0: zoomToActualSize,
+      1: fitBoard,
+      2: zoomToSelection,
+      ']': () => reorder(true),
+      '[': () => reorder(false),
+    };
+    if (actions[key]) { e.preventDefault(); actions[key](); }
+    return;
+  }
+  if (e.altKey) return;
+
+  switch (e.key) {
+    case 'Escape':
+      closePopover();
+      if (mode) {
+        mode = null;
+        connectHint = null;
+        doc.items = new Map(history.base.items);
+        doc.order = history.base.order.slice();
+        selectionChanged();
+        return;
+      }
+      if (tool !== 'select') setTool('select');
+      else if (find.matches.length) closeFind();
+      else setSelection([]);
+      return;
+    case 'Delete':
+    case 'Backspace':
+      e.preventDefault();
+      deleteSelection();
+      return;
+    case 'Enter': {
+      const item = sel.size === 1 ? selectedItems()[0] : null;
+      if (editableText(item)) { e.preventDefault(); startEdit(item.id); }
+      return;
+    }
+    case 'Tab': {
+      const item = sel.size === 1 ? selectedItems()[0] : null;
+      if (item?.type === 'sticky') { e.preventDefault(); nextSticky(item, 'right'); }
+      return;
+    }
+    case 'PageUp': e.preventDefault(); reorder(true); return;
+    case 'PageDown': e.preventDefault(); reorder(false); return;
+    case '?': showHelp(); return;
+    case 'ArrowLeft': case 'ArrowRight': case 'ArrowUp': case 'ArrowDown': {
+      if (!sel.size) return;
+      e.preventDefault();
+      const step = e.shiftKey ? 10 : 1;
+      const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+      const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+      for (const id of moveTargets()) patch(id, moveItem(doc.items.get(id), dx, dy));
+      commit();
+      return;
+    }
+  }
+
+  const key = e.key.toLowerCase();
+  if (key === 'm') { toggleMinimap(); return; }
+  if (key === 'i') { $('#imageInput').click(); return; }
+  if (TOOL_KEYS[key]) setTool(TOOL_KEYS[key]);
+}
+
+function onKeyUp(e) {
+  if (e.key === ' ') {
+    spaceDown = false;
+    syncCursor();
+  }
+}
+
+function onPaste(e) {
+  if (typingInField(e.target) || present.on) return;
+  const files = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
+  const spot = pointer.inside ? pointer.world : toWorld(stageCenter());
+  if (files.length) { e.preventDefault(); addImageFiles(files, spot); return; }
+  const text = e.clipboardData?.getData('text/plain') ?? '';
+  e.preventDefault();
+  if (clip && text === clip.text) pasteClip();
+  else pasteLines(text);
+}
+
+function onCopy(e) {
+  if (!typingInField(e.target)) copySelection(e);
+}
+
+function onCut(e) {
+  if (!typingInField(e.target) && copySelection(e)) deleteSelection();
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const files = [...(e.dataTransfer?.files || [])];
+  if (!files.length) return;
+  trackPointer(e);
+  const board = files.find(f => /\.(mircore|json)$/i.test(f.name));
+  if (board) { openDroppedFile(board); return; }
+  addImageFiles(files.filter(f => f.type.startsWith('image/')), pointer.world);
+}
+
+function bindInput() {
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('mousedown', e => e.preventDefault()); // otherwise the canvas steals focus from a new editor
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('pointercancel', () => { mode = null; commit(); });
+  canvas.addEventListener('pointerleave', () => { pointer.inside = false; invalidate(); });
+  canvas.addEventListener('dblclick', onDoubleClick);
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  stage.addEventListener('wheel', onWheel, { passive: false });
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', () => { spaceDown = false; syncCursor(); });
+  window.addEventListener('paste', onPaste);
+  window.addEventListener('copy', onCopy);
+  window.addEventListener('cut', onCut);
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop', onDrop);
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    if (present.on) showFrame(present.index);
+  });
+}
+
+// Saving, opening and exporting. Board content only ever goes to a file the
+// user picked. Nothing is written to localStorage or IndexedDB, so no copy
+// lingers in the browser profile.
+
+const file = {
+  handle: null,  // FileSystemFileHandle when the browser supports direct writes
+  name: null,
+  dirty: false,
+  generation: 0,
+  saving: false,
+  failed: false,
+  timer: 0,
+};
+const AUTOSAVE_DELAY = 1200;
+
+// Managed browsers can disable file dialogs. Chrome then rejects with the same
+// AbortError as a user pressing Cancel, only instantly, so speed tells them
+// apart. Without this, Save would silently do nothing on those machines.
+const HUMAN_CANCEL_MS = 300;
+
+async function pick(picker, options) {
+  if (typeof picker !== 'function') return { blocked: true };
+  const started = performance.now();
+  try {
+    return { result: await picker.call(window, options) };
+  } catch (err) {
+    if (err.name === 'AbortError' && performance.now() - started >= HUMAN_CANCEL_MS) return { cancelled: true };
+    return { blocked: true };
+  }
+}
+function serialize() {
+  const items = doc.order.map(id => doc.items.get(id));
+  const used = new Set(items.filter(i => i.type === 'image').map(i => i.asset));
+  const assets = {};
+  // Deleted images must not survive in the file, so only referenced ones are written.
+  for (const id of used) if (doc.assets.has(id)) assets[id] = doc.assets.get(id);
+  return JSON.stringify({
+    format: FORMAT,
+    version: FORMAT_VERSION,
+    title: doc.title,
+    view: { x: view.x, y: view.y, z: view.z },
+    items,
+    assets,
+  });
+}
+
+// ---- Loading untrusted files ----------------------------------------------
+// A board may come from anyone, so every field is rebuilt from a whitelist.
+// Remote image URLs are dropped here and blocked again by the page's CSP.
+
+const num = (v, fallback = 0) => (Number.isFinite(v) ? clamp(v, -1e7, 1e7) : fallback);
+const str = (v, max = 20000) => (typeof v === 'string' ? v.slice(0, max) : '');
+const oneOf = (v, list, fallback) => (list.includes(v) ? v : fallback);
+const bool = v => v === true;
+const colorOf = (v, fallback) => (typeof v === 'string' && (/^#[0-9a-f]{6}$/i.test(v) || v === 'transparent') ? v : fallback);
+const size = (v, fallback) => { const n = num(v, fallback); return n >= 1 ? n : fallback; };
+const ID_RE = /^[a-z0-9_-]{1,40}$/i;
+const idOf = v => (typeof v === 'string' && ID_RE.test(v) ? v : null);
+
+function cleanEnd(end) {
+  if (!end || typeof end !== 'object') return { x: 0, y: 0 };
+  if (idOf(end.id)) return { id: end.id, side: oneOf(end.side, ['t', 'r', 'b', 'l', 'auto'], 'auto') };
+  return { x: num(end.x), y: num(end.y) };
+}
+
+function cleanItem(raw) {
+  if (!raw || typeof raw !== 'object' || !ITEM_TYPES.includes(raw.type) || !idOf(raw.id)) return null;
+  const common = { id: raw.id, type: raw.type, locked: bool(raw.locked), group: idOf(raw.group) };
+  const box = { x: num(raw.x), y: num(raw.y), w: size(raw.w, 100), h: size(raw.h, 100) };
+  const prose = { text: str(raw.text), bold: bool(raw.bold), align: oneOf(raw.align, ['left', 'center', 'right'], 'center') };
+  switch (raw.type) {
+    case 'sticky':
+      return { ...common, ...box, ...prose, color: colorOf(raw.color, STICKY_COLORS[0]), fontSize: clamp(num(raw.fontSize), 0, 400) };
+    case 'text':
+      return { ...common, ...box, ...prose, color: colorOf(raw.color, INK), fontSize: clamp(size(raw.fontSize, 24), 6, 400) };
+    case 'shape':
+      return {
+        ...common, ...box, ...prose, shape: oneOf(raw.shape, SHAPE_NAMES, 'rect'), fill: colorOf(raw.fill, '#ffffff'), stroke: colorOf(raw.stroke, INK),
+        strokeWidth: clamp(num(raw.strokeWidth, 2), 0, 40), dash: bool(raw.dash), fontSize: clamp(size(raw.fontSize, 18), 6, 400), color: colorOf(raw.color, INK),
+      };
+    case 'line':
+      return {
+        ...common, a: cleanEnd(raw.a), b: cleanEnd(raw.b), kind: oneOf(raw.kind, ['straight', 'elbow', 'curve'], 'curve'), color: colorOf(raw.color, INK),
+        width: clamp(num(raw.width, 2), 0.5, 40), dash: bool(raw.dash), startCap: oneOf(raw.startCap, ['none', 'arrow'], 'none'), endCap: oneOf(raw.endCap, ['none', 'arrow'], 'arrow'), text: str(raw.text, 500),
+      };
+    case 'pen': {
+      const pts = Array.isArray(raw.pts) ? raw.pts.filter(Number.isFinite).slice(0, 400000) : [];
+      if (pts.length < 2) return null;
+      if (pts.length % 2) pts.pop();
+      return { ...common, ...box, ow: size(raw.ow, 1), oh: size(raw.oh, 1), pts, color: colorOf(raw.color, INK), width: clamp(num(raw.width, 3), 0.5, 80), alpha: clamp(num(raw.alpha, 1), 0.05, 1) };
+    }
+    case 'frame':
+      return { ...common, ...box, title: str(raw.title, 200), fill: colorOf(raw.fill, '#ffffff'), seq: num(raw.seq) };
+    case 'image':
+      return idOf(raw.asset) ? { ...common, ...box, asset: raw.asset } : null;
+  }
+  return null;
+}
+
+function parseBoard(text) {
+  const raw = JSON.parse(text);
+  if (raw?.format !== FORMAT) throw new Error('This is not a MirCore board.');
+  if (!Number.isInteger(raw.version) || raw.version > FORMAT_VERSION) throw new Error('This board was made by a newer version of MirCore.');
+  const assets = new Map();
+  for (const [id, url] of Object.entries(raw.assets && typeof raw.assets === 'object' ? raw.assets : {})) {
+    if (idOf(id) && typeof url === 'string' && IMAGE_TYPES.test(url)) assets.set(id, url);
+  }
+  const items = new Map();
+  for (const entry of Array.isArray(raw.items) ? raw.items.slice(0, 200000) : []) {
+    const item = cleanItem(entry);
+    if (item && !items.has(item.id) && (item.type !== 'image' || assets.has(item.asset))) items.set(item.id, item);
+  }
+  for (const item of items.values()) {
+    if (item.type !== 'line') continue;
+    const detach = end => (end.id && (!items.has(end.id) || !CONNECTABLE.has(items.get(end.id).type)) ? { x: 0, y: 0 } : end);
+    items.set(item.id, { ...item, a: detach(item.a), b: detach(item.b) });
+  }
+  const v = raw.view || {};
+  return {
+    title: str(raw.title, 120) || 'Untitled board',
+    items, assets,
+    view: Number.isFinite(v.z) ? { x: num(v.x), y: num(v.y), z: clamp(v.z, MIN_ZOOM, MAX_ZOOM) } : null,
+  };
+}
+
+function loadBoard(board, handle, name) {
+  commitEditSilently();
+  doc.title = board.title;
+  doc.items = board.items;
+  doc.order = [...board.items.keys()];
+  doc.assets = board.assets;
+  imageCache.clear();
+  sel.clear();
+  find.matches = [];
+  clip = null;
+  file.handle = handle;
+  file.name = name;
+  file.dirty = false;
+  file.failed = false;
+  clearTimeout(file.timer);
+  resetHistory();
+  $('#title').value = doc.title;
+  syncStatus();
+  syncEmptyState();
+  refreshFramesPanel();
+  selectionChanged();
+  if (board.view) Object.assign(view, board.view);
+  else if (doc.items.size) Object.assign(view, viewFor(unionBounds(doc.items.values()), 90));
+  else Object.assign(view, { x: -stage.clientWidth / 2, y: -stage.clientHeight / 2, z: 1 });
+  invalidate();
+}
+
+function commitEditSilently() {
+  if (editing) cancelEdit();
+}
+
+// ---- Save -----------------------------------------------------------------
+
+function markDirty() {
+  file.dirty = true;
+  file.generation += 1;
+  syncStatus();
+  if (file.handle && !file.failed) {
+    clearTimeout(file.timer);
+    file.timer = setTimeout(writeToHandle, AUTOSAVE_DELAY);
+  }
+}
+
+function markClean() {
+  file.dirty = false;
+  file.failed = false;
+  syncStatus();
+}
+
+async function writeToHandle() {
+  if (!file.handle) return false;
+  if (file.saving) return false;
+  file.saving = true;
+  clearTimeout(file.timer);
+  syncStatus();
+  const generation = file.generation;
+  let ok = true;
+  try {
+    const stream = await file.handle.createWritable();
+    await stream.write(serialize());
+    await stream.close();
+    file.failed = false;
+  } catch (err) {
+    ok = false;
+    file.failed = true;
+    toast(`Could not save to ${file.name}: ${err.message}. Use Save As to choose another location.`, true);
+  }
+  file.saving = false;
+  if (ok && generation === file.generation) markClean();
+  else if (ok) file.timer = setTimeout(writeToHandle, AUTOSAVE_DELAY);
+  syncStatus();
+  return ok;
+}
+
+const fileName = () => `${doc.title.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'board'}${FILE_EXT}`;
+const BOARD_TYPES = [{ description: 'MirCore board', accept: { 'application/json': [FILE_EXT] } }];
+
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = h('a', { href: url, download: name });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+async function saveFile() {
+  commitEdit();
+  if (file.handle) return writeToHandle();
+  return saveFileAs();
+}
+
+async function saveFileAs() {
+  commitEdit();
+  const picked = await pick(window.showSaveFilePicker, { suggestedName: fileName(), types: BOARD_TYPES });
+  if (picked.cancelled) return false;
+  if (picked.result) {
+    file.handle = picked.result;
+    file.name = file.handle.name;
+    file.failed = false;
+    return writeToHandle();
+  }
+  // No direct file access here: a normal download, which also means no autosave.
+  toast('Saved through the browser’s downloads. Autosave is off, so press Ctrl+S to save again.');
+  file.handle = null;
+  file.name = fileName();
+  downloadBlob(new Blob([serialize()], { type: 'application/json' }), file.name);
+  markClean();
+  return true;
+}
+
+// ---- Open -----------------------------------------------------------------
+
+async function confirmDiscard() {
+  if (!file.dirty) return true;
+  const choice = await ask('Save changes first?', `"${doc.title}" has changes that are not saved to a file.`, [
+    { label: 'Cancel', value: 'cancel', kind: 'secondary' },
+    { label: 'Discard', value: 'discard', kind: 'destructive' },
+    { label: 'Save', value: 'save', kind: 'primary' },
+  ]);
+  if (choice === 'save') return saveFile();
+  return choice === 'discard';
+}
+
+function loadText(text, handle, name) {
+  try {
+    loadBoard(parseBoard(text), handle, name);
+    toast(`Opened ${name}`);
+  } catch (err) {
+    toast(err instanceof SyntaxError ? `${name} is not a valid board file` : err.message, true);
+  }
+}
+
+async function openFile() {
+  if (!await confirmDiscard()) return;
+  const picked = await pick(window.showOpenFilePicker, { types: BOARD_TYPES });
+  if (picked.cancelled) return;
+  if (picked.blocked) { $('#fileInput').click(); return; }
+  const [handle] = picked.result;
+  const chosen = await handle.getFile();
+  loadText(await chosen.text(), handle, chosen.name);
+}
+
+async function openDroppedFile(dropped) {
+  if (!await confirmDiscard()) return;
+  loadText(await dropped.text(), null, dropped.name);
+}
+
+async function newBoard() {
+  if (!await confirmDiscard()) return;
+  loadBoard({ title: 'Untitled board', items: new Map(), assets: new Map(), view: null }, null, null);
+}
+
+// ---- Export ---------------------------------------------------------------
+
+async function decodeImages(items) {
+  await Promise.all(items.filter(i => i.type === 'image').map(i => imageFor(i.asset)?.decode().catch(() => {})));
+}
+
+function renderRegion(box, scale, items) {
+  const out = document.createElement('canvas');
+  out.width = Math.max(1, Math.round(box.w * scale));
+  out.height = Math.max(1, Math.round(box.h * scale));
+  const c = out.getContext('2d');
+  c.fillStyle = '#ffffff';
+  c.fillRect(0, 0, out.width, out.height);
+  c.setTransform(scale, 0, 0, scale, -box.x * scale, -box.y * scale);
+  const opts = { zoom: scale, shadows: true, background: '#ffffff', hideFrameTitles: false, skipTextOf: null };
+  for (const item of items) drawItem(c, item, opts);
+  return out;
+}
+
+const exportScale = box => Math.min(2, 8000 / Math.max(box.w, box.h, 1));
+const toPngBlob = region => new Promise(resolve => region.toBlob(resolve, 'image/png'));
+
+async function exportPng() {
+  commitEdit();
+  const chosen = selectedItems();
+  const source = chosen.length ? chosen : paintOrder();
+  if (!source.length) { toast('The board is empty'); return; }
+  const box = padRect(unionBounds(source), 40);
+  const all = paintOrder();
+  await decodeImages(all);
+  const blob = await toPngBlob(renderRegion(box, exportScale(box), all));
+  const name = fileName().replace(FILE_EXT, '.png');
+  const picked = await pick(window.showSaveFilePicker, { suggestedName: name, types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }] });
+  if (picked.cancelled) return;
+  if (picked.blocked) { downloadBlob(blob, name); return; }
+  try {
+    const stream = await picked.result.createWritable();
+    await stream.write(blob);
+    await stream.close();
+    toast(`Exported ${picked.result.name}`);
+  } catch (err) {
+    toast(`Could not export: ${err.message}`, true);
+  }
+}
+
+// Uses the browser's own print dialog, whose "Save as PDF" stays on this machine.
+async function printBoard() {
+  commitEdit();
+  const all = paintOrder();
+  if (!all.length) { toast('The board is empty'); return; }
+  await decodeImages(all);
+  const frames = framesInOrder();
+  const regions = frames.length ? frames : [padRect(unionBounds(all), 40)];
+  const holder = $('#print');
+  const urls = [];
+  for (const region of regions) {
+    const box = { x: region.x, y: region.y, w: region.w, h: region.h };
+    const url = URL.createObjectURL(await toPngBlob(renderRegion(box, Math.min(2, 3000 / Math.max(box.w, box.h)), all)));
+    urls.push(url);
+    const img = h('img', { src: url, alt: region.title || 'Board' });
+    holder.append(img);
+    await img.decode();
+  }
+  window.addEventListener('afterprint', () => {
+    holder.replaceChildren();
+    urls.forEach(u => URL.revokeObjectURL(u));
+  }, { once: true });
+  window.print();
+}
+
+function bindFiles() {
+  $('#fileInput').addEventListener('change', async e => {
+    const picked = e.target.files[0];
+    e.target.value = '';
+    if (picked) loadText(await picked.text(), null, picked.name);
+  });
+  $('#imageInput').addEventListener('change', e => {
+    addImageFiles([...e.target.files], toWorld(stageCenter()));
+    e.target.value = '';
+  });
+  window.addEventListener('beforeunload', e => {
+    if (file.dirty) e.preventDefault();
+  });
+}
+
+// Toolbars, menus, panels and dialogs.
+
+const ICONS = {
+  select: '<path d="M5 3.5l14 8-6.2 1.4L9.6 19z"/>',
+  hand: '<path d="M8 12V6a1.5 1.5 0 013 0v5m0-1V4.5a1.5 1.5 0 013 0V11m0-4.5a1.5 1.5 0 013 0V12m0-3a1.5 1.5 0 013 0v5c0 4-2.6 7-6.5 7-3 0-4.6-1.2-6-3.4L4.2 14a1.6 1.6 0 012.6-1.8L8 13.5"/>',
+  sticky: '<path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5"/>',
+  text: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
+  shape: '<rect x="3.5" y="9.5" width="11" height="11" rx="1.5"/><circle cx="15.5" cy="8.5" r="5"/>',
+  line: '<path d="M4 20C10 20 8 5 18 5"/><path d="M14.5 3.5L19 5l-2 4.2"/>',
+  pen: '<path d="M4 20l1-4.5L16 4.5a2.1 2.1 0 013 3L8 18.5z"/><path d="M14 6.5l3.5 3.5"/>',
+  eraser: '<path d="M9 20l-5-5a2 2 0 010-2.8l8-8a2 2 0 012.8 0l5.2 5.2a2 2 0 010 2.8L13 20z"/><path d="M8.5 8.5l7 7M9 20h11"/>',
+  frame: '<path d="M7 3v18M17 3v18M3 7h18M3 17h18"/>',
+  image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.7"/><path d="M4 17l5-4 3.5 3 3-2.5L20 17"/>',
+  undo: '<path d="M8 5L4 9l4 4"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+  redo: '<path d="M16 5l4 4-4 4"/><path d="M20 9H10a6 6 0 000 12h3"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  frames: '<rect x="3.5" y="4.5" width="17" height="6" rx="1"/><rect x="3.5" y="13.5" width="17" height="6" rx="1"/>',
+  help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 114 2c-1 .7-1.6 1.2-1.6 2.4"/><path d="M12 17v.01"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  map: '<path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2zM9 4v14M15 6v14"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  shield: '<path d="M12 3l7.5 3v5.5c0 4.6-3.2 8-7.5 9.5-4.3-1.5-7.5-4.9-7.5-9.5V6z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/>',
+  more: '<circle cx="5.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18.5" cy="12" r="1.2"/>',
+  up: '<path d="M6 15l6-6 6 6"/>',
+  down: '<path d="M6 9l6 6 6-6"/>',
+  left: '<path d="M15 6l-6 6 6 6"/>',
+  right: '<path d="M9 6l6 6-6 6"/>',
+  lock: '<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+  unlock: '<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8 11V8a4 4 0 017.6-1.7"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>',
+  copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5a1.5 1.5 0 00-1.5-1.5H5A1.5 1.5 0 003.5 5v9A1.5 1.5 0 005 15.5h3.5"/>',
+  alignL: '<path d="M4 4v16M8 8h12M8 16h7"/>',
+  alignC: '<path d="M5 7h14M8 12h8M5 17h14"/>',
+  alignR: '<path d="M20 4v16M4 8h12M9 16h7"/>',
+  grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/>',
+  arrange: '<path d="M4 5h16M4 19h16"/><rect x="7" y="9" width="10" height="6" rx="1"/>',
+  straight: '<path d="M4 20L20 4"/>',
+  elbow: '<path d="M4 20h8V4h8"/>',
+  curve: '<path d="M4 20C12 20 12 4 20 4"/>',
+  dash: '<path d="M3 12h4M10 12h4M17 12h4"/>',
+  arrowEnd: '<path d="M3 12h17M15 7l5 5-5 5"/>',
+  arrowStart: '<path d="M21 12H4M9 7l-5 5 5 5"/>',
+};
+
+const SHAPE_ICONS = {
+  rect: '<rect x="4" y="6" width="16" height="12"/>',
+  round: '<rect x="4" y="6" width="16" height="12" rx="3.5"/>',
+  ellipse: '<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',
+  diamond: '<path d="M12 3.5L20.5 12 12 20.5 3.5 12z"/>',
+  triangle: '<path d="M12 4.5l8.5 15h-17z"/>',
+  parallelogram: '<path d="M7.5 6H21l-4.5 12H3z"/>',
+  hexagon: '<path d="M7.5 5h9l4.5 7-4.5 7h-9L3 12z"/>',
+  star: '<path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 17l-5.3 2.9 1.2-6L3.4 9.8l6-.7z"/>',
+};
+
+const svg = inner => `<svg viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
+
+function setIcon(node, name) {
+  node.innerHTML = svg(ICONS[name]);
+}
+
+function iconButton(name, label, onClick, options = {}) {
+  const b = h('button', { className: 'btn', title: label, type: 'button', 'aria-label': label, on: { click: onClick } });
+  b.innerHTML = svg(options.raw || ICONS[name]);
+  if (options.pressed !== undefined) b.setAttribute('aria-pressed', String(!!options.pressed));
+  return b;
+}
+
+// ---- Left toolbar ---------------------------------------------------------
+
+const TOOLS = [
+  ['select', 'select', 'Select', 'V'], ['hand', 'hand', 'Pan', 'H'], ['sticky', 'sticky', 'Sticky note', 'N'],
+  ['text', 'text', 'Text', 'T'], ['shape', 'shape', 'Shapes', 'S'], ['line', 'line', 'Connector', 'L'],
+  ['pen', 'pen', 'Pen', 'P'], ['eraser', 'eraser', 'Eraser', 'E'], ['frame', 'frame', 'Frame', 'F'],
+];
+
+function buildToolbar() {
+  const list = $('#toolList');
+  for (const [id, icon, label, key] of TOOLS) {
+    const b = iconButton(icon, `${label} (${key})`, () => setTool(id));
+    b.dataset.tool = id;
+    b.append(h('span', { className: 'key' }, key));
+    list.append(b);
+  }
+  list.append(iconButton('image', 'Add image from file (I)', () => $('#imageInput').click()));
+}
+
+function syncToolbar() {
+  for (const b of document.querySelectorAll('#toolList [data-tool]')) b.setAttribute('aria-pressed', String(b.dataset.tool === tool));
+  const fly = $('#flyout');
+  fly.replaceChildren();
+  fly.hidden = !['sticky', 'shape', 'pen'].includes(tool);
+  if (fly.hidden) return;
+  if (tool === 'sticky') {
+    fly.append(h('div', { className: 'title' }, 'Sticky colour'), swatchGrid(STICKY_COLORS, memory.stickyColor, c => { memory.stickyColor = c; syncToolbar(); }));
+  } else if (tool === 'shape') {
+    const grid = h('div', { className: 'grid4' });
+    for (const name of SHAPE_NAMES) {
+      grid.append(iconButton(null, name, () => { memory.shape = name; syncToolbar(); }, { raw: SHAPE_ICONS[name], pressed: memory.shape === name }));
+    }
+    fly.append(h('div', { className: 'title' }, 'Drag on the board'), grid);
+  } else {
+    const marker = memory.penAlpha < 1;
+    const kinds = h('div', { className: 'row' },
+      textButton('Pen', !marker, () => { Object.assign(memory, { penAlpha: 1, penWidth: 3 }); syncToolbar(); }),
+      textButton('Marker', marker, () => { Object.assign(memory, { penAlpha: 0.35, penWidth: 20 }); syncToolbar(); }));
+    fly.append(kinds, swatchGrid(INK_COLORS, memory.penColor, c => { memory.penColor = c; syncToolbar(); }, true));
+  }
+  const anchor = document.querySelector(`#toolList [data-tool="${tool}"]`).getBoundingClientRect();
+  fly.style.top = `${anchor.top - 6}px`;
+}
+
+function textButton(label, pressed, onClick, title = label) {
+  const b = h('button', { className: 'btn txt', type: 'button', title, 'aria-label': title, on: { click: onClick } }, label);
+  if (pressed !== undefined) b.setAttribute('aria-pressed', String(!!pressed));
+  return b;
+}
+
+function swatchGrid(colors, current, pick, round = false) {
+  const grid = h('div', { className: 'grid6' });
+  for (const color of colors) {
+    const b = h('button', {
+      type: 'button', className: `swatch${round ? ' round' : ''}${color === 'transparent' ? ' none' : ''}`,
+      title: color === 'transparent' ? 'No fill' : color, 'aria-label': color === 'transparent' ? 'No fill' : `Colour ${color}`,
+      'aria-pressed': String(color === current), on: { click: () => pick(color) },
+    });
+    b.style.background = color;
+    grid.append(b);
+  }
+  return grid;
+}
+
+function syncHistoryButtons() {
+  $('#undoBtn').disabled = !history.past.length;
+  $('#redoBtn').disabled = !history.future.length;
+}
+
+function syncEmptyState() {
+  $('#empty').hidden = doc.items.size > 0;
+}
+
+function syncZoomLabel() {
+  const label = `${Math.round(view.z * 100)}%`;
+  const node = $('#zoomLabel');
+  if (node.textContent !== label) node.textContent = label;
+}
+
+function syncStatus() {
+  const node = $('#status');
+  node.className = 'status';
+  let text;
+  if (file.failed) { text = 'Save failed'; node.classList.add('err'); }
+  else if (file.saving) text = 'Saving…';
+  else if (!file.name) {
+    text = doc.items.size ? 'Not saved yet' : 'New board';
+    if (doc.items.size) node.classList.add('warn');
+  } else if (file.dirty) {
+    text = file.handle ? 'Saving soon…' : `${file.name}: unsaved changes`;
+    if (!file.handle) node.classList.add('warn');
+  } else text = `Saved to ${file.name}`;
+  node.textContent = text;
+}
+
+// ---- Popovers and menus ---------------------------------------------------
+
+const pop = $('#pop');
+
+function closePopover() {
+  pop.hidden = true;
+  pop.replaceChildren();
+}
+
+function openPopover(content, x, y) {
+  pop.replaceChildren(content);
+  pop.hidden = false;
+  const r = pop.getBoundingClientRect();
+  pop.style.left = `${clamp(x, 8, window.innerWidth - r.width - 8)}px`;
+  pop.style.top = `${clamp(y, 8, window.innerHeight - r.height - 8)}px`;
+}
+
+function popoverBelow(anchor, content) {
+  const r = anchor.getBoundingClientRect();
+  openPopover(content, r.left, r.bottom + 8);
+}
+
+function menu(entries) {
+  const root = h('div', { className: 'menu', role: 'menu' });
+  for (const entry of entries) {
+    if (!entry) { root.append(h('hr')); continue; }
+    const b = h('button', {
+      type: 'button', role: 'menuitem', disabled: !!entry.disabled, className: entry.danger ? 'danger' : '',
+      on: { click: () => { closePopover(); entry.run(); } },
+    }, h('span', {}, entry.label), entry.key ? h('kbd', {}, entry.key) : null);
+    root.append(b);
+  }
+  return root;
+}
+
+function fileMenuEntries() {
+  return [
+    { label: 'New board', run: newBoard },
+    { label: 'Open…', key: 'Ctrl+O', run: openFile },
+    null,
+    { label: 'Save', key: 'Ctrl+S', run: saveFile },
+    { label: 'Save as…', key: 'Ctrl+Shift+S', run: saveFileAs },
+    null,
+    { label: sel.size ? 'Export selection as PNG…' : 'Export board as PNG…', run: exportPng },
+    { label: 'Print or save as PDF…', run: printBoard },
+  ];
+}
+
+function arrangeEntries() {
+  const items = selectedItems();
+  const grouped = items.some(i => i.group);
+  const locked = items.length && items.every(i => i.locked);
+  return [
+    { label: 'Duplicate', key: 'Ctrl+D', run: duplicateSelection, disabled: !items.length },
+    { label: 'Bring to front', key: 'Ctrl+]', run: () => reorder(true), disabled: !items.length },
+    { label: 'Send to back', key: 'Ctrl+[', run: () => reorder(false), disabled: !items.length },
+    null,
+    { label: grouped ? 'Ungroup' : 'Group', key: grouped ? 'Ctrl+Shift+G' : 'Ctrl+G', run: grouped ? ungroupSelection : groupSelection, disabled: items.length < 2 && !grouped },
+    { label: locked ? 'Unlock' : 'Lock', key: 'Ctrl+L', run: toggleLock, disabled: !items.length },
+    null,
+    { label: 'Delete', key: 'Del', run: deleteSelection, disabled: !items.length, danger: true },
+  ];
+}
+
+function showContextMenu(x, y) {
+  if (present.on) return;
+  const item = hitTest(pointer.world);
+  if (item && !sel.has(item.id)) setSelection(withGroup(item));
+  const entries = sel.size ? arrangeEntries() : [
+    { label: 'Add sticky here', run: () => createStickyAt(pointer.world) },
+    { label: 'Select all', key: 'Ctrl+A', run: () => setSelection(doc.order.filter(id => !doc.items.get(id).locked)), disabled: !doc.order.length },
+    { label: 'Fit board to screen', key: 'Ctrl+1', run: fitBoard },
+  ];
+  openPopover(menu(entries), x, y);
+}
+
+// ---- Selection toolbar ----------------------------------------------------
+
+function colorControl(label, current, palette, apply, round) {
+  const b = h('button', {
+    type: 'button', className: `swatch btnlike${round ? ' round' : ''}${current === 'transparent' ? ' none' : ''}`, title: label, 'aria-label': label,
+    on: { click: () => popoverBelow(b, swatchGrid(palette, current, c => { closePopover(); apply(c); }, round)) },
+  });
+  b.style.background = current;
+  b.style.margin = '0 3px';
+  return b;
+}
+
+function refreshContextBar() {
+  const bar = $('#ctx');
+  bar.replaceChildren();
+  const items = selectedItems();
+  if (!items.length || editing || present.on || (mode && mode.type !== 'marquee')) { bar.hidden = true; return; }
+  if (mode?.type === 'marquee') { bar.hidden = true; return; }
+  const types = new Set(items.map(i => i.type));
+  const first = items[0];
+  const sep = () => h('span', { className: 'sep' });
+  const has = (...t) => t.some(x => types.has(x));
+  const allLocked = items.every(i => i.locked);
+
+  if (allLocked) {
+    bar.append(iconButton('unlock', 'Unlock (Ctrl+L)', toggleLock));
+    bar.hidden = false;
+    return;
+  }
+
+  if (has('sticky')) {
+    const s = items.find(i => i.type === 'sticky');
+    bar.append(colorControl('Sticky colour', s.color, STICKY_COLORS, c => {
+      memory.stickyColor = c;
+      changeSelection(i => (i.type === 'sticky' ? { color: c } : null));
+    }));
+  }
+  if (has('shape')) {
+    const s = items.find(i => i.type === 'shape');
+    bar.append(
+      colorControl('Fill', s.fill, FILL_COLORS, c => changeSelection(i => (i.type === 'shape' ? { fill: c } : null))),
+      colorControl('Border', s.stroke, INK_COLORS, c => changeSelection(i => (i.type === 'shape' ? { stroke: c } : null)), true));
+    if (items.length === 1) {
+      const shapeBtn = iconButton(null, 'Change shape', () => {
+        const grid = h('div', { className: 'grid4' });
+        for (const name of SHAPE_NAMES) {
+          grid.append(iconButton(null, name, () => { closePopover(); memory.shape = name; changeSelection(() => ({ shape: name })); }, { raw: SHAPE_ICONS[name], pressed: s.shape === name }));
+        }
+        popoverBelow(shapeBtn, grid);
+      }, { raw: SHAPE_ICONS[s.shape] });
+      bar.append(shapeBtn);
+    }
+  }
+  if (has('frame')) {
+    const f = items.find(i => i.type === 'frame');
+    bar.append(colorControl('Background', f.fill, FILL_COLORS, c => changeSelection(i => (i.type === 'frame' ? { fill: c } : null))));
+  }
+  if (has('text')) {
+    const t = items.find(i => i.type === 'text');
+    bar.append(colorControl('Text colour', t.color, INK_COLORS, c => changeSelection(i => (i.type === 'text' ? { color: c } : null)), true));
+  }
+  if (has('line', 'pen')) {
+    const l = items.find(i => i.type === 'line' || i.type === 'pen');
+    bar.append(colorControl('Colour', l.color, INK_COLORS, c => changeSelection(i => (i.type === 'line' || i.type === 'pen' ? { color: c } : null)), true));
+  }
+  if (has('line')) {
+    const l = items.find(i => i.type === 'line');
+    bar.append(sep());
+    for (const kind of ['curve', 'elbow', 'straight']) {
+      bar.append(iconButton(kind, `${kind[0].toUpperCase()}${kind.slice(1)} line`, () => {
+        memory.lineKind = kind;
+        changeSelection(i => (i.type === 'line' ? { kind } : null));
+      }, { pressed: l.kind === kind }));
+    }
+    bar.append(sep(),
+      iconButton('arrowStart', 'Arrow at start', () => changeSelection(i => (i.type === 'line' ? { startCap: i.startCap === 'arrow' ? 'none' : 'arrow' } : null)), { pressed: l.startCap === 'arrow' }),
+      iconButton('arrowEnd', 'Arrow at end', () => changeSelection(i => (i.type === 'line' ? { endCap: i.endCap === 'arrow' ? 'none' : 'arrow' } : null)), { pressed: l.endCap === 'arrow' }));
+  }
+  if (has('line', 'shape')) {
+    const l = items.find(i => i.type === 'line' || i.type === 'shape');
+    bar.append(iconButton('dash', 'Dashed', () => changeSelection(i => (i.type === 'line' || i.type === 'shape' ? { dash: !l.dash } : null)), { pressed: l.dash }));
+  }
+  if (has('line', 'pen', 'shape')) {
+    const l = items.find(i => ['line', 'pen', 'shape'].includes(i.type));
+    const current = l.type === 'shape' ? l.strokeWidth : l.width;
+    const weight = textButton(`${Math.round(current)}px`, undefined, () => {
+      popoverBelow(weight, menu([1, 2, 3, 5, 8, 12].map(w => ({
+        label: `${w}px`,
+        run: () => changeSelection(i => (i.type === 'shape' ? { strokeWidth: w } : ['line', 'pen'].includes(i.type) ? { width: w } : null)),
+      }))));
+    }, 'Line thickness');
+    bar.append(weight);
+  }
+
+  if (has('sticky', 'text', 'shape')) {
+    const t = items.find(i => TEXTUAL.has(i.type));
+    bar.append(sep());
+    const sizeBtn = textButton(t.fontSize ? `${Math.round(t.fontSize)}` : 'Auto', undefined, () => {
+      const sizes = [12, 14, 18, 24, 32, 48, 64, 96];
+      const entries = sizes.map(s => ({ label: String(s), run: () => changeSelection(i => (TEXTUAL.has(i.type) ? { fontSize: s } : null)) }));
+      if (has('sticky')) entries.unshift({ label: 'Auto (fit to note)', run: () => changeSelection(i => (i.type === 'sticky' ? { fontSize: 0 } : null)) });
+      popoverBelow(sizeBtn, menu(entries));
+    }, 'Font size');
+    bar.append(sizeBtn);
+    bar.append(textButton('B', t.bold, () => changeSelection(i => (TEXTUAL.has(i.type) ? { bold: !t.bold } : null)), 'Bold'));
+    const next = { left: 'center', center: 'right', right: 'left' }[t.align];
+    bar.append(iconButton({ left: 'alignL', center: 'alignC', right: 'alignR' }[t.align], `Text alignment: ${t.align}`, () => changeSelection(i => (TEXTUAL.has(i.type) ? { align: next } : null))));
+  }
+
+  if (items.length > 1) {
+    bar.append(sep());
+    const alignBtn = iconButton('arrange', 'Align and distribute', () => {
+      popoverBelow(alignBtn, menu([
+        { label: 'Align left', run: () => alignSelection('left') },
+        { label: 'Align centre', run: () => alignSelection('hcenter') },
+        { label: 'Align right', run: () => alignSelection('right') },
+        null,
+        { label: 'Align top', run: () => alignSelection('top') },
+        { label: 'Align middle', run: () => alignSelection('vcenter') },
+        { label: 'Align bottom', run: () => alignSelection('bottom') },
+        null,
+        { label: 'Distribute horizontally', run: () => distributeSelection('x'), disabled: items.length < 3 },
+        { label: 'Distribute vertically', run: () => distributeSelection('y'), disabled: items.length < 3 },
+      ]));
+    });
+    bar.append(alignBtn, iconButton('grid', 'Tidy into a grid', tidySelection));
+  }
+
+  bar.append(sep());
+  const moreBtn = iconButton('more', 'More', () => popoverBelow(moreBtn, menu(arrangeEntries())));
+  bar.append(moreBtn);
+  if (first) bar.hidden = false;
+}
+
+function positionContextBar() {
+  const bar = $('#ctx');
+  if (bar.hidden) return;
+  const items = selectedItems();
+  if (!items.length) return;
+  const r = screenRect(unionBounds(items));
+  const w = bar.offsetWidth, hh = bar.offsetHeight;
+  const dots = quickDots().length ? 36 : 14;
+  let y = r.y - hh - dots;
+  if (y < 62) y = Math.min(r.y + r.h + dots, stage.clientHeight - hh - 62);
+  const x = clamp(r.x + r.w / 2 - w / 2, 72, Math.max(72, stage.clientWidth - w - 12));
+  bar.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+}
+
+// ---- Frames panel ---------------------------------------------------------
+
+function refreshFramesPanel() {
+  const panel = $('#framesPanel');
+  if (panel.hidden) return;
+  const frames = framesInOrder();
+  panel.replaceChildren(h('h2', {}, 'Frames'));
+  if (!frames.length) {
+    panel.append(h('p', { className: 'none' }, 'Press F and click the board. Frames become slides when you present.'));
+    return;
+  }
+  frames.forEach((frame, i) => {
+    const swap = other => {
+      patch(frame.id, { seq: other.seq });
+      patch(other.id, { seq: frame.seq });
+      commit();
+    };
+    panel.append(h('div', { className: 'frameRow' },
+      h('button', {
+        className: 'name', type: 'button', title: frame.title,
+        on: { click: () => { setSelection([frame.id]); animateView(viewFor(frame, 110)); } },
+      }, `${i + 1}. ${frame.title || 'Frame'}`),
+      iconButton('up', 'Move earlier', () => frames[i - 1] && swap(frames[i - 1])),
+      iconButton('down', 'Move later', () => frames[i + 1] && swap(frames[i + 1]))));
+  });
+}
+
+function toggleFramesPanel() {
+  const panel = $('#framesPanel');
+  panel.hidden = !panel.hidden;
+  $('#framesBtn').setAttribute('aria-pressed', String(!panel.hidden));
+  refreshFramesPanel();
+}
+
+function toggleMinimap() {
+  const map = $('#minimap');
+  map.hidden = !map.hidden;
+  $('#mapBtn').setAttribute('aria-pressed', String(!map.hidden));
+  invalidate();
+}
+
+function bindMinimap() {
+  const jump = e => {
+    const { scale, ox, oy, vp } = minimapFrame();
+    const r = minimap.getBoundingClientRect();
+    const wx = ((e.clientX - r.left) * (minimap.width / r.width) - ox) / scale;
+    const wy = ((e.clientY - r.top) * (minimap.height / r.height) - oy) / scale;
+    view.x = wx - vp.w / 2;
+    view.y = wy - vp.h / 2;
+    invalidate();
+  };
+  minimap.addEventListener('pointerdown', e => { minimap.setPointerCapture(e.pointerId); jump(e); });
+  minimap.addEventListener('pointermove', e => { if (e.buttons) jump(e); });
+}
+
+// ---- Find -----------------------------------------------------------------
+
+function openFind() {
+  $('#findBox').hidden = false;
+  $('#findInput').focus();
+  $('#findInput').select();
+}
+
+function closeFind() {
+  $('#findBox').hidden = true;
+  $('#findInput').value = '';
+  find.matches = [];
+  invalidate();
+}
+
+function syncFindCount() {
+  const input = $('#findInput').value;
+  $('#findCount').textContent = !input ? '' : find.matches.length ? `${find.index + 1} / ${find.matches.length}` : 'None';
+}
+
+// ---- Dialogs and toasts ---------------------------------------------------
+
+function toast(message, isError = false) {
+  const node = h('div', { className: `toast${isError ? ' err' : ''}` }, message);
+  $('#toasts').append(node);
+  setTimeout(() => node.remove(), isError ? 7000 : 2600);
+}
+
+function ask(title, message, buttons) {
+  const dialog = $('#dialog');
+  return new Promise(resolve => {
+    const actions = h('div', { className: 'actions' });
+    for (const b of buttons) {
+      actions.append(h('button', { type: 'button', className: b.kind, on: { click: () => { dialog.close(); resolve(b.value); } } }, b.label));
+    }
+    dialog.replaceChildren(h('h2', {}, title), h('p', {}, message), actions);
+    dialog.oncancel = () => resolve('cancel');
+    dialog.showModal();
+  });
+}
+
+function showDialog(...content) {
+  const dialog = $('#dialog');
+  const done = h('button', { type: 'button', className: 'primary', on: { click: () => dialog.close() } }, 'Close');
+  dialog.oncancel = null;
+  dialog.replaceChildren(...content, h('div', { className: 'actions' }, done));
+  dialog.showModal();
+}
+
+function showLocalInfo() {
+  const policy = $('meta[http-equiv="Content-Security-Policy"]').content;
+  const code = text => h('code', {}, text);
+  showDialog(
+    h('h2', {}, 'This board stays on your machine'),
+    h('ul', {},
+      h('li', {}, 'MirCore is one HTML file with no server, no account, no analytics and no external resources.'),
+      h('li', {}, 'The browser enforces this: the page’s Content Security Policy blocks every network connection, and the script is pinned by hash.'),
+      h('li', {}, 'Boards are written only to files you pick. Board content is not kept in browser storage, and the board name is left out of the tab title so it stays out of browser history.'),
+      h('li', {}, 'Browser spellcheck is switched off while you type, because enhanced spellcheck services can send text to the cloud.'),
+      h('li', {}, 'Links are not clickable and images are stored inside the board file, so opening a board cannot reach out.')),
+    h('p', {}, 'Not covered: browser extensions can read any page, so use a browser profile without extensions for sensitive boards. The operating system still controls the saved files, the clipboard and the printer you choose.'),
+    h('p', {}, 'Active policy: ', code(policy)));
+}
+
+function showHelp() {
+  const section = (title, rows) => [h('h3', {}, title), ...rows.map(([label, key]) => h('div', {}, h('span', {}, label), h('kbd', {}, key)))];
+  showDialog(
+    h('h2', {}, 'Keyboard shortcuts'),
+    h('div', { className: 'keys' },
+      ...section('Brainstorm', [
+        ['New sticky', 'Double-click or N'], ['Next sticky to the right', 'Tab'], ['Next sticky below', 'Ctrl+Enter'], ['Finish typing', 'Esc'],
+        ['Edit selected', 'Enter'], ['Connected idea', 'Drag a + dot'], ['Sticky per line', 'Paste a list'], ['Copy while dragging', 'Alt+drag'],
+      ]),
+      ...section('Tools', [
+        ['Select', 'V'], ['Pan', 'H or Space+drag'], ['Text', 'T'], ['Shape', 'S'], ['Connector', 'L'], ['Pen', 'P'], ['Eraser', 'E'], ['Frame', 'F'], ['Image', 'I'], ['Minimap', 'M'],
+      ]),
+      ...section('Edit', [
+        ['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Y'], ['Duplicate', 'Ctrl+D'], ['Select all', 'Ctrl+A'], ['Group', 'Ctrl+G'], ['Ungroup', 'Ctrl+Shift+G'], ['Lock', 'Ctrl+L'],
+        ['Front / back', 'Ctrl+] / Ctrl+['], ['Nudge', 'Arrows'], ['Skip snapping', 'Hold Ctrl'],
+      ]),
+      ...section('View and file', [
+        ['Zoom', 'Ctrl+wheel'], ['Pan', 'Right-drag'], ['100%', 'Ctrl+0'], ['Fit board', 'Ctrl+1'], ['Zoom to selection', 'Ctrl+2'], ['Find', 'Ctrl+F'], ['Save', 'Ctrl+S'], ['Open', 'Ctrl+O'],
+      ])));
+}
+
+// ---- Wiring ---------------------------------------------------------------
+
+function bindUI() {
+  setIcon($('#menuBtn'), 'menu');
+  setIcon($('#findBtn'), 'search');
+  setIcon($('#framesBtn'), 'frames');
+  setIcon($('#helpBtn'), 'help');
+  setIcon($('#undoBtn'), 'undo');
+  setIcon($('#redoBtn'), 'redo');
+  setIcon($('#zoomIn'), 'plus');
+  setIcon($('#zoomOut'), 'minus');
+  setIcon($('#mapBtn'), 'map');
+  setIcon($('#findClose'), 'close');
+  setIcon($('#prevFrame'), 'left');
+  setIcon($('#nextFrame'), 'right');
+  $('#localBtn').innerHTML = `${svg(ICONS.shield)}<span>Local only</span>`;
+
+  $('#menuBtn').addEventListener('click', e => { e.stopPropagation(); popoverBelow($('#menuBtn'), menu(fileMenuEntries())); });
+  $('#status').addEventListener('click', saveFile);
+  $('#localBtn').addEventListener('click', showLocalInfo);
+  $('#findBtn').addEventListener('click', openFind);
+  $('#framesBtn').addEventListener('click', toggleFramesPanel);
+  $('#helpBtn').addEventListener('click', showHelp);
+  $('#presentBtn').addEventListener('click', startPresenting);
+  $('#undoBtn').addEventListener('click', undo);
+  $('#redoBtn').addEventListener('click', redo);
+  $('#zoomIn').addEventListener('click', () => zoomAt(stageCenter(), view.z * 1.25));
+  $('#zoomOut').addEventListener('click', () => zoomAt(stageCenter(), view.z / 1.25));
+  $('#zoomLabel').addEventListener('click', fitBoard);
+  $('#mapBtn').addEventListener('click', toggleMinimap);
+  $('#prevFrame').addEventListener('click', () => showFrame(present.index - 1));
+  $('#nextFrame').addEventListener('click', () => showFrame(present.index + 1));
+  $('#endPresent').addEventListener('click', endPresenting);
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) endPresenting(); });
+
+  $('#title').addEventListener('input', e => { doc.title = e.target.value || 'Untitled board'; markDirty(); });
+  $('#title').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') e.target.blur(); });
+
+  $('#findInput').addEventListener('input', e => runFind(e.target.value));
+  $('#findInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); stepFind(e.shiftKey ? -1 : 1); }
+    if (e.key === 'Escape') closeFind();
+  });
+  $('#findClose').addEventListener('click', closeFind);
+
+  document.addEventListener('click', e => {
+    if (e.detail > 0 && e.target.closest?.('button')) document.activeElement?.blur?.();
+  });
+  document.addEventListener('pointerdown', e => {
+    if (!pop.hidden && !pop.contains(e.target) && e.target !== canvas) closePopover();
+  });
+}
+
+// Startup.
+
+function init() {
+  buildToolbar();
+  bindUI();
+  bindInput();
+  bindMinimap();
+  bindFiles();
+  resizeCanvas();
+  view.x = -stage.clientWidth / 2;
+  view.y = -stage.clientHeight / 2;
+  $('#title').value = doc.title;
+  resetHistory();
+  syncToolbar();
+  syncStatus();
+  syncEmptyState();
+  syncCursor();
+  // Read-only view of the board for the end-to-end tests in test/e2e.mjs.
+  window.mircore = Object.freeze({ snapshot: () => JSON.parse(serialize()), selection: () => [...sel], status: () => ({ ...file, handle: !!file.handle }) });
+  invalidate();
+}
+
+init();
+
+})();
+</script>
+</body>
+</html>
